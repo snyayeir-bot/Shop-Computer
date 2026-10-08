@@ -1,74 +1,17 @@
 import express from 'express';
 import crypto from 'crypto';
 import { getOne, execute } from '../db.js';
+import { generateAcledaKHQR } from '../utils/khqrGenerator.js';
 
 const router = express.Router();
 
 const KHPAY_BASE_URL = 'https://khpay.site/api/v1';
 const API_KEY = process.env.KHPAY_API_KEY || process.env.KHQR_API_KEY || 'ak_e48619172adb718876830c1806f6cdb988852ab60fc662fe';
 
-// Helper: Calculate CRC16-CCITT for standard EMVCo KHQR compliance
-function crc16(data) {
-  let crc = 0xffff;
-  for (let i = 0; i < data.length; i++) {
-    crc ^= data.charCodeAt(i) << 8;
-    for (let j = 0; j < 8; j++) {
-      if ((crc & 0x8000) !== 0) {
-        crc = ((crc << 1) ^ 0x1021) & 0xffff;
-      } else {
-        crc = (crc << 1) & 0xffff;
-      }
-    }
-  }
-  return crc.toString(16).toUpperCase().padStart(4, '0');
-}
-
-// Generate EMVCo KHQR string
-function generateEMVCoKhqr({ amount, currency = 'USD', orderNumber, merchantName = 'CYBERTECH KH', bakongAccountId }) {
-  const numAmount = Number(amount).toFixed(2);
-  const currCode = currency === 'KHR' ? '116' : '840';
-  
-  // Format ACLEDA account ID
-  let accId = (bakongAccountId || process.env.BAKONG_ACCOUNT_ID || '0978810715@aclb').trim();
-  const cleanMerchant = (merchantName || process.env.BAKONG_MERCHANT_NAME || 'CYBERTECH COMPUTER').slice(0, 25);
-  const city = process.env.BAKONG_CITY || 'Phnom Penh';
-  const acquiringBank = (process.env.BAKONG_ACQUIRING_BANK || 'aclbkhppxxx').trim();
-
-  // Tag 29: Bakong Merchant / Individual Account Information
-  // Subtag 00: Bakong Account ID (e.g. 0978810715@aclb or 855978810715@aclb)
-  // Subtag 02: Acquiring Bank (aclbkhppxxx for ACLEDA Bank)
-  const sub00 = `00${accId.length.toString().padStart(2, '0')}${accId}`;
-  const sub02 = `02${acquiringBank.length.toString().padStart(2, '0')}${acquiringBank}`;
-  const tag29Content = `${sub00}${sub02}`;
-  const tag29 = `29${tag29Content.length.toString().padStart(2, '0')}${tag29Content}`;
-
-  // Tag 62: Additional Data (Reference / Order Number)
-  const orderRef = (orderNumber || 'ORD-CYBER').slice(0, 25);
-  const tag62_01 = `01${orderRef.length.toString().padStart(2, '0')}${orderRef}`;
-  const tag62 = `62${tag62_01.length.toString().padStart(2, '0')}${tag62_01}`;
-
-  const amtStr = numAmount.toString();
-  const rawWithoutCrc = 
-    `000201` +
-    `010212` +
-    tag29 +
-    `52045999` +
-    `5303${currCode}` +
-    `54${amtStr.length.toString().padStart(2, '0')}${amtStr}` +
-    `5802KH` +
-    `59${cleanMerchant.length.toString().padStart(2, '0')}${cleanMerchant}` +
-    `60${city.length.toString().padStart(2, '0')}${city}` +
-    tag62 +
-    `6304`;
-
-  const checksum = crc16(rawWithoutCrc);
-  return `${rawWithoutCrc}${checksum}`;
-}
-
 // POST /api/payment/khqr/generate
 router.post('/khqr/generate', async (req, res, next) => {
   try {
-    const { amount, currency = 'USD', orderNumber, merchantName = 'CYBERTECH KH', bakongAccountId } = req.body;
+    const { amount, currency = 'USD', orderNumber, merchantName = 'CYBERTECH COMPUTER', bakongAccountId } = req.body;
 
     if (!amount || Number(amount) <= 0) {
       return res.status(400).json({ success: false, message: 'Valid amount is required' });
@@ -78,7 +21,7 @@ router.post('/khqr/generate', async (req, res, next) => {
     let khpayData = null;
     let isTestMode = false;
 
-    // 1. Attempt official KHPay API request
+    // 1. Attempt official KHPay API request if configured
     try {
       const khpayRes = await fetch(`${KHPAY_BASE_URL}/qr/generate`, {
         method: 'POST',
@@ -98,44 +41,23 @@ router.post('/khqr/generate', async (req, res, next) => {
 
       if (responseJson.success && responseJson.data) {
         khpayData = responseJson.data;
-      } else if (responseJson.error_code === 'PAYWAY_NOT_CONFIGURED') {
-        // Merchant has not linked ABA PayWay in khpay.site dashboard yet, try with test mode
-        console.warn('KHPay PayWay link not set, requesting KHPay with X-Test-Mode: true');
-        const testRes = await fetch(`${KHPAY_BASE_URL}/qr/generate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`,
-            'X-Test-Mode': 'true'
-          },
-          body: JSON.stringify({
-            amount: '1.00',
-            currency: 'USD',
-            note: `Test Order ${orderNumber || ''}`
-          })
-        });
-        const testJson = await testRes.json();
-        if (testJson.success && testJson.data) {
-          khpayData = testJson.data;
-          isTestMode = true;
-        }
       }
     } catch (apiErr) {
-      console.error('KHPay API fetch error:', apiErr.message);
+      console.warn('KHPay API fetch notice:', apiErr.message);
     }
 
-    // 2. Generate EMVCo KHQR string
-    const fallbackKhqr = generateEMVCoKhqr({
+    // 2. Generate direct ACLEDA Mobile KHQR with phone 015650751
+    const acledaQr = generateAcledaKHQR({
       amount: numAmount,
       currency,
+      merchantName: merchantName || process.env.BAKONG_MERCHANT_NAME || 'CYBERTECH COMPUTER',
       orderNumber,
-      merchantName,
-      bakongAccountId
+      phone: process.env.BAKONG_PHONE || '015650751'
     });
 
-    const qrString = khpayData?.qr_string && !isTestMode ? khpayData.qr_string : fallbackKhqr;
-    const transactionId = khpayData?.transaction_id || `txn_local_${Date.now()}`;
-    const md5Hash = crypto.createHash('md5').update(qrString + API_KEY).digest('hex');
+    const qrString = khpayData?.qr_string && !isTestMode ? khpayData.qr_string : acledaQr.qrString;
+    const transactionId = khpayData?.transaction_id || `txn_aclb_${Date.now()}`;
+    const md5Hash = acledaQr.md5 || crypto.createHash('md5').update(qrString + API_KEY).digest('hex');
 
     res.json({
       success: true,
@@ -144,14 +66,15 @@ router.post('/khqr/generate', async (req, res, next) => {
         qr_string: qrString,
         qr_image: khpayData?.qr_image || null,
         payment_url: khpayData?.payment_url || null,
-        abapay_deeplink: khpayData?.abapay_deeplink || `bakong://khqr?qr=${encodeURIComponent(qrString)}`,
+        abapay_deeplink: `bakong://khqr?qr=${encodeURIComponent(qrString)}`,
         expires_in: khpayData?.expires_in || 300,
         amount: numAmount,
         currency,
         orderNumber,
-        merchantName,
+        merchantName: merchantName || 'CYBERTECH COMPUTER',
+        account: acledaQr.account || '85515650751@aclb',
         md5: md5Hash,
-        gateway: 'KHPay / Bakong KHQR',
+        gateway: 'ACLEDA Mobile KHQR (Bakong)',
         is_test_mode: isTestMode,
         apiKeyUsed: `${API_KEY.slice(0, 6)}...${API_KEY.slice(-4)}`
       }
