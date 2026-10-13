@@ -243,6 +243,36 @@ export default function AuthModal() {
             {loading ? 'Processing...' : authModalTab === 'login' ? 'Sign In Now' : 'Create Account'}
           </button>
 
+          {/* Quick Demo Fill Buttons for Login Tab */}
+          {authModalTab === 'login' && (
+            <div className="pt-2 border-t border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span>⚡ Quick Demo Credentials:</span>
+                <span className="text-[10px] text-cyan-400">1-Click</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, email: 'demo@demo.com', password: 'demo123' }))}
+                  className="p-2 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-500/30 text-left transition-all hover:scale-[1.02]"
+                >
+                  <p className="text-[11px] font-bold text-cyan-400 font-mono">Demo User</p>
+                  <p className="text-[10px] text-slate-300 truncate font-mono">demo@demo.com</p>
+                  <p className="text-[9px] text-slate-500 font-mono">Pass: demo123</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, email: 'admin@cybertech.com', password: 'admin123' }))}
+                  className="p-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-left transition-all hover:scale-[1.02]"
+                >
+                  <p className="text-[11px] font-bold text-purple-400 font-mono">Super Admin</p>
+                  <p className="text-[10px] text-slate-300 truncate font-mono">admin@cybertech.com</p>
+                  <p className="text-[9px] text-slate-500 font-mono">Pass: admin123</p>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="text-center pt-2">
             {authModalTab === 'login' ? (
               <p className="text-xs text-slate-400">

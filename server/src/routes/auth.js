@@ -99,7 +99,7 @@ router.post('/wipe-test-data', async (req, res, next) => {
     await execute('DELETE FROM orders');
     await execute('DELETE FROM products');
     await execute('DELETE FROM shops');
-    await execute("DELETE FROM users WHERE email != 'admin@cybertech.com'");
+    await execute("DELETE FROM users WHERE email NOT IN ('admin@cybertech.com', 'demo@demo.com')");
     await execute('DELETE FROM site_analytics');
 
     // Ensure clean admin exists
@@ -109,6 +109,24 @@ router.post('/wipe-test-data', async (req, res, next) => {
       await execute(
         `INSERT INTO users (name, email, password, role, phone) VALUES (?, ?, ?, 'admin', ?)`,
         ['Super Admin', 'admin@cybertech.com', hash, '+855 12 345 678']
+      );
+    }
+
+    // Ensure demo account exists
+    const demoExists = await getOne("SELECT id FROM users WHERE email = 'demo@demo.com'");
+    if (!demoExists) {
+      const hash = await bcrypt.hash("demo123", 10);
+      const demoRes = await execute(
+        `INSERT INTO users (name, email, password, role, phone, avatar) VALUES (?, ?, ?, 'seller', ?, ?)`,
+        ['demo', 'demo@demo.com', hash, '+855 12 345 678', 'https://api.dicebear.com/7.x/bottts/svg?seed=demo']
+      );
+      await execute(
+        `INSERT OR IGNORE INTO shops (seller_id, shop_name, description, is_approved) VALUES (?, ?, ?, 1)`,
+        [demoRes.lastID, 'Demo PC Store', 'Official Demo Hardware & PC Store']
+      );
+      await execute(
+        `INSERT OR IGNORE INTO user_wallets (user_id, balance) VALUES (?, 1000.00)`,
+        [demoRes.lastID]
       );
     }
 

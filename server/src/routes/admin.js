@@ -1,4 +1,5 @@
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import { query, getOne, execute } from '../db.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 
@@ -135,6 +136,136 @@ router.put('/shops/:id/approve', async (req, res, next) => {
       message: approvedVal ? 'Shop approved successfully!' : 'Shop rejected/suspended',
       shopId,
       is_approved: approvedVal
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/admin/admins - List all admin accounts
+router.get('/admins', async (req, res, next) => {
+  try {
+    const admins = await query(
+      `SELECT id, name, email, role, phone, avatar, created_at 
+       FROM users 
+       WHERE role = 'admin' 
+       ORDER BY id ASC`
+    );
+    res.json({ success: true, admins });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/admin/admins - Create a new admin account or promote existing user
+router.post('/admins', async (req, res, next) => {
+  try {
+    const { name, email, password, phone } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, and password are required'
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanName = name.trim();
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long'
+      });
+    }
+
+    // Check if user already exists
+    const existing = await getOne('SELECT id, role FROM users WHERE email = ?', [cleanEmail]);
+
+    if (existing) {
+      if (existing.role === 'admin') {
+        return res.status(409).json({
+          success: false,
+          message: 'An admin account with this email already exists!'
+        });
+      }
+
+      // If user exists with role buyer or seller, promote to admin and update password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await execute(
+        'UPDATE users SET role = ?, name = ?, password = ?, phone = COALESCE(?, phone), updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ['admin', cleanName, hashedPassword, phone ? phone.trim() : null, existing.id]
+      );
+
+      const updatedUser = await getOne(
+        'SELECT id, name, email, role, phone, avatar, created_at FROM users WHERE id = ?',
+        [existing.id]
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: `Account ${cleanEmail} promoted to Admin successfully!`,
+        admin: updatedUser
+      });
+    }
+
+    // Brand new admin user creation
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanName)}`;
+
+    const result = await execute(
+      'INSERT INTO users (name, email, password, role, phone, avatar) VALUES (?, ?, ?, ?, ?, ?)',
+      [cleanName, cleanEmail, hashedPassword, 'admin', phone ? phone.trim() : null, avatar]
+    );
+
+    // Ensure wallet exists
+    await execute('INSERT OR IGNORE INTO user_wallets (user_id, balance) VALUES (?, 0.00)', [result.lastID]);
+
+    const newAdmin = await getOne(
+      'SELECT id, name, email, role, phone, avatar, created_at FROM users WHERE id = ?',
+      [result.lastID]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'New Admin account created successfully!',
+      admin: newAdmin
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/admin/admins/:id - Revoke admin privileges (demote to buyer)
+router.delete('/admins/:id', async (req, res, next) => {
+  try {
+    const targetId = parseInt(req.params.id, 10);
+
+    if (req.user.id === targetId) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot revoke your own admin account!'
+      });
+    }
+
+    const targetUser = await getOne('SELECT id, email, role FROM users WHERE id = ?', [targetId]);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (targetUser.email === 'admin@cybertech.com') {
+      return res.status(403).json({
+        success: false,
+        message: 'The primary root system administrator cannot be removed or demoted!'
+      });
+    }
+
+    // Demote role to buyer
+    await execute("UPDATE users SET role = 'buyer', updated_at = CURRENT_TIMESTAMP WHERE id = ?", [targetId]);
+
+    res.json({
+      success: true,
+      message: `Admin privileges revoked for ${targetUser.email}. Account demoted to Buyer.`
     });
   } catch (error) {
     next(error);

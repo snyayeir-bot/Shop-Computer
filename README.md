@@ -157,13 +157,12 @@ npm start
 
 ## 🔑 គណនីសាកល្បង (Demo Credentials)
 
-អ្នកអាចប្រើប្រាស់គណនីខាងក្រោម ឬចុចប៊ូតុង **Demo Switch** នៅលើ Navigation Bar ខាងលើដើម្បីសាកល្បង៖
+អ្នកអាចប្រើប្រាស់គណនីខាងក្រោម ឬចុចប៊ូតុង **1-Click Demo Fill** នៅលើផ្ទាំង Sign In ដើម្បីសាកល្បង៖
 
-| តួនាទី (Role) | អ៊ីមែល (Email) | ពាក្យសម្ងាត់ (Password) | សិទ្ធិប្រើប្រាស់ |
-| :--- | :--- | :--- | :--- |
-| **Buyer** | `buyer@demo.com` | `password123` | ទិញទំនិញ, បញ្ចូលលុយ Wallet, ស្គែន Slip |
-| **Seller** | `seller@demo.com` | `password123` | បង្កើតហាង, គ្រប់គ្រងទំនិញ, មើលចំណូល |
-| **Super Admin** | `admin@demo.com` | `password123` | អនុម័តហាង, ពិនិត្យមើលរបាយការណ៍ហិរញ្ញវត្ថុ |
+| តួនាទី (Role) | ឈ្មោះ (Name) | អ៊ីមែល (Email) | ពាក្យសម្ងាត់ (Password) | សិទ្ធិប្រើប្រាស់ |
+| :--- | :--- | :--- | :--- | :--- |
+| **Demo User (Seller + Buyer)** | `demo` | `demo@demo.com` | `demo123` | ទិញទំនិញ (1,000 Credits), គ្រប់គ្រងហាង Demo PC Store (500 Credits), ដកប្រាក់, បញ្ចូលលុយ |
+| **Super Admin** | `Super Admin` | `admin@cybertech.com` | `admin123` | គ្រប់គ្រងប្រព័ន្ធទាំងមូល, អនុម័តហាង, ពិនិត្យមើលរបាយការណ៍ហិរញ្ញវត្ថុ |
 
 ---
 

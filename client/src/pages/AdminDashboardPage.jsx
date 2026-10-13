@@ -31,7 +31,17 @@ import {
   CreditCard,
   Image as ImageIcon,
   QrCode,
-  Upload
+  Upload,
+  UserPlus,
+  ShieldCheck,
+  Trash2,
+  Lock,
+  UserCheck,
+  Phone,
+  Mail,
+  EyeOff,
+  User as UserIcon,
+  Key
 } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -40,14 +50,28 @@ import { useLanguage } from '../context/LanguageContext';
 export default function AdminDashboardPage() {
   const { user, switchDemoUser } = useAuth();
   const { lang, t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'topups' | 'withdrawals'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'topups' | 'withdrawals' | 'admins'
   const [analytics, setAnalytics] = useState(null);
   const [financials, setFinancials] = useState(null);
   const [shops, setShops] = useState([]);
   const [topups, setTopups] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
+  const [adminsList, setAdminsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+
+  // Admin Account Creation States
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [newAdminForm, setNewAdminForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: ''
+  });
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [adminFormLoading, setAdminFormLoading] = useState(false);
+  const [adminFormError, setAdminFormError] = useState('');
+  const [adminFormSuccess, setAdminFormSuccess] = useState('');
 
   // Receipt Inspection & Filter States
   const [selectedSlip, setSelectedSlip] = useState(null);
@@ -64,12 +88,13 @@ export default function AdminDashboardPage() {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [anaRes, finRes, shopsRes, topupsRes, withRes] = await Promise.all([
+      const [anaRes, finRes, shopsRes, topupsRes, withRes, adminsRes] = await Promise.all([
         api.get('/admin/analytics'),
         api.get('/admin/financials'),
         api.get('/admin/shops'),
         api.get('/wallet/admin/topups').catch(() => ({ data: { topups: [] } })),
-        api.get('/wallet/admin/withdrawals').catch(() => ({ data: { withdrawals: [] } }))
+        api.get('/wallet/admin/withdrawals').catch(() => ({ data: { withdrawals: [] } })),
+        api.get('/admin/admins').catch(() => ({ data: { admins: [] } }))
       ]);
 
       setAnalytics(anaRes.data);
@@ -77,6 +102,7 @@ export default function AdminDashboardPage() {
       setShops(shopsRes.data.shops || []);
       setTopups(topupsRes.data?.topups || []);
       setWithdrawals(withRes.data?.withdrawals || []);
+      setAdminsList(adminsRes.data?.admins || []);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
@@ -160,6 +186,55 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    setAdminFormError('');
+    setAdminFormSuccess('');
+    setAdminFormLoading(true);
+
+    try {
+      const res = await api.post('/admin/admins', newAdminForm);
+      setAdminFormSuccess(res.data.message || t('admin.createAdminSuccess'));
+      setNewAdminForm({ name: '', email: '', password: '', phone: '' });
+      const adminsRes = await api.get('/admin/admins');
+      setAdminsList(adminsRes.data?.admins || []);
+      setTimeout(() => {
+        setIsAdminModalOpen(false);
+        setAdminFormSuccess('');
+      }, 1000);
+    } catch (err) {
+      setAdminFormError(err.response?.data?.message || 'Failed to create admin');
+    } finally {
+      setAdminFormLoading(false);
+    }
+  };
+
+  const handleRevokeAdmin = async (adminId, adminEmail) => {
+    if (!window.confirm(`${t('admin.revokeConfirm')} (${adminEmail})`)) {
+      return;
+    }
+    setActionLoading(`revoke_${adminId}`);
+    try {
+      await api.delete(`/admin/admins/${adminId}`);
+      const adminsRes = await api.get('/admin/admins');
+      setAdminsList(adminsRes.data?.admins || []);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to revoke admin');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let pass = '';
+    for (let i = 0; i < 10; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewAdminForm(prev => ({ ...prev, password: pass }));
+    setShowAdminPassword(true);
+  };
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
@@ -201,67 +276,147 @@ export default function AdminDashboardPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* Top Header */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-rose-950/80 via-slate-900 to-slate-950 border border-rose-500/30 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-rose-950/80 via-slate-900 to-slate-950 border border-rose-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-2xl bg-rose-500/10 border-2 border-rose-500/40 text-rose-400 flex items-center justify-center shadow-glow-rose">
+          <div className="h-16 w-16 rounded-2xl bg-rose-500/10 border-2 border-rose-500/40 text-rose-400 flex items-center justify-center shadow-glow-rose shrink-0">
             <ShieldAlert className="h-8 w-8" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-white font-mono">Super Admin Control Hub</h1>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-rose-950 text-rose-300 border border-rose-500/40">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl font-black text-white font-mono tracking-tight">Super Admin Control Hub</h1>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-950 text-rose-300 border border-rose-500/40 shadow-sm">
                 Level 1 Clearance
               </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/40 flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Ops
+              </span>
             </div>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Logged in: {user.name} ({user.email})
-            </p>
+            <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1 flex-wrap">
+              <span>Admin: <strong className="text-slate-200">{user.name}</strong></span>
+              <span className="text-slate-600">•</span>
+              <span>{user.email}</span>
+            </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center flex-wrap gap-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
+        {/* Quick Actions & Revenue Snapshot */}
+        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end flex-wrap">
+          <div className="bg-slate-900/90 border border-rose-500/30 rounded-2xl p-2.5 px-4 shadow-sm">
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+              Net Platform Profit
+            </span>
+            <span className="text-lg font-black font-mono text-emerald-400">
+              {Number(fin.netProfit || 0).toFixed(2)} Credits
+            </span>
+          </div>
+
+          <button
+            onClick={() => {
+              setIsAdminModalOpen(true);
+              setAdminFormError('');
+              setAdminFormSuccess('');
+            }}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-mono text-xs font-black shadow-glow-rose flex items-center gap-2 transition-all cursor-pointer"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>{t('admin.createAdminBtn')}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Dedicated Super Admin Segmented Navigation Bar */}
+      <div className="bg-[#0b1120] p-2 rounded-2xl border border-slate-800 shadow-xl">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {/* Tab 1: Overview & Financials */}
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
+            className={`py-3 px-4 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2.5 border ${
               activeTab === 'overview'
-                ? 'bg-rose-600 text-white shadow-glow-rose'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-rose-600 via-rose-600 to-pink-600 text-white border-rose-400/40 shadow-glow-rose scale-[1.01]'
+                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850 hover:border-slate-700'
             }`}
           >
-            {t('admin.tabOverview')}
+            <div className={`p-1.5 rounded-lg ${activeTab === 'overview' ? 'bg-white/20 text-white' : 'bg-rose-500/10 text-rose-400'}`}>
+              <BarChart3 className="h-4 w-4" />
+            </div>
+            <span className="truncate">{t('admin.tabOverview')}</span>
           </button>
+
+          {/* Tab 2: Slip Top-Ups */}
           <button
             onClick={() => setActiveTab('topups')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+            className={`py-3 px-4 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2.5 border ${
               activeTab === 'topups'
-                ? 'bg-rose-600 text-white shadow-glow-rose'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-rose-600 via-rose-600 to-pink-600 text-white border-rose-400/40 shadow-glow-rose scale-[1.01]'
+                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850 hover:border-slate-700'
             }`}
           >
-            <Coins className="h-3.5 w-3.5 text-amber-400" />
-            <span>{t('admin.tabTopups')}</span>
-            {pendingTopupsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-black font-extrabold animate-pulse">
+            <div className={`p-1.5 rounded-lg ${activeTab === 'topups' ? 'bg-white/20 text-white' : 'bg-amber-500/10 text-amber-400'}`}>
+              <Coins className="h-4 w-4" />
+            </div>
+            <span className="truncate">{t('admin.tabTopups')}</span>
+            {pendingTopupsCount > 0 ? (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black animate-pulse ${
+                activeTab === 'topups' ? 'bg-white text-rose-900 shadow-sm' : 'bg-amber-500 text-black'
+              }`}>
                 {pendingTopupsCount}
+              </span>
+            ) : (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                activeTab === 'topups' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700'
+              }`}>
+                {topups.length}
               </span>
             )}
           </button>
+
+          {/* Tab 3: Withdrawals */}
           <button
             onClick={() => setActiveTab('withdrawals')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+            className={`py-3 px-4 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2.5 border ${
               activeTab === 'withdrawals'
-                ? 'bg-rose-600 text-white shadow-glow-rose'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-rose-600 via-rose-600 to-pink-600 text-white border-rose-400/40 shadow-glow-rose scale-[1.01]'
+                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850 hover:border-slate-700'
             }`}
           >
-            <ArrowUpRight className="h-3.5 w-3.5 text-cyan-400" />
-            <span>{t('admin.tabWithdrawals')}</span>
-            {pendingWithdrawalsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-500 text-black font-extrabold animate-pulse">
+            <div className={`p-1.5 rounded-lg ${activeTab === 'withdrawals' ? 'bg-white/20 text-white' : 'bg-cyan-500/10 text-cyan-400'}`}>
+              <ArrowUpRight className="h-4 w-4" />
+            </div>
+            <span className="truncate">{t('admin.tabWithdrawals')}</span>
+            {pendingWithdrawalsCount > 0 ? (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black animate-pulse ${
+                activeTab === 'withdrawals' ? 'bg-white text-rose-900 shadow-sm' : 'bg-cyan-500 text-black'
+              }`}>
                 {pendingWithdrawalsCount}
               </span>
+            ) : (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                activeTab === 'withdrawals' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700'
+              }`}>
+                {withdrawals.length}
+              </span>
             )}
+          </button>
+
+          {/* Tab 4: Admin Team */}
+          <button
+            onClick={() => setActiveTab('admins')}
+            className={`py-3 px-4 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2.5 border ${
+              activeTab === 'admins'
+                ? 'bg-gradient-to-r from-rose-600 via-rose-600 to-pink-600 text-white border-rose-400/40 shadow-glow-rose scale-[1.01]'
+                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850 hover:border-slate-700'
+            }`}
+          >
+            <div className={`p-1.5 rounded-lg ${activeTab === 'admins' ? 'bg-white/20 text-white' : 'bg-pink-500/10 text-pink-400'}`}>
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+            <span className="truncate">{t('admin.tabAdmins')}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+              activeTab === 'admins' ? 'bg-white text-rose-900 shadow-sm' : 'bg-slate-800 text-slate-300 border border-slate-700'
+            }`}>
+              {adminsList.length}
+            </span>
           </button>
         </div>
       </div>
@@ -902,7 +1057,197 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* 4. MODAL: SLIP INSPECTION (ពិនិត្យវិក្កយបត្រផ្ទេរប្រាក់ជាក់ស្ដែង) */}
+      {/* 4. ADMIN TEAM MANAGEMENT TAB (ការគ្រប់គ្រងគណនី Admin) */}
+      {activeTab === 'admins' && (
+        <div className="space-y-6">
+          {/* Header Row with Create Admin Action */}
+          <div className="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black text-white font-mono flex items-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-rose-500" />
+                <span>{t('admin.adminManagement')}</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+                {t('admin.adminManagementSub')}
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsAdminModalOpen(true);
+                setAdminFormError('');
+                setAdminFormSuccess('');
+              }}
+              className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-mono text-xs font-black hover:opacity-95 shadow-glow-rose flex items-center gap-2 transition-all cursor-pointer w-fit"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>{t('admin.createAdminBtn')}</span>
+            </button>
+          </div>
+
+          {/* Metrics summary for Admin Security */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-mono uppercase tracking-wider">Active Admins</span>
+                <ShieldCheck className="h-4 w-4 text-rose-400" />
+              </div>
+              <p className="text-2xl font-black font-mono text-white">{adminsList.length}</p>
+              <span className="text-[11px] text-slate-500 font-mono">Platform Overseers</span>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-mono uppercase tracking-wider">Primary System Root</span>
+                <Key className="h-4 w-4 text-amber-400" />
+              </div>
+              <p className="text-sm font-bold font-mono text-amber-300 truncate">admin@cybertech.com</p>
+              <span className="text-[11px] text-slate-500 font-mono">Immutable Level-1 Root</span>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-mono uppercase tracking-wider">Privilege Scope</span>
+                <Lock className="h-4 w-4 text-cyan-400" />
+              </div>
+              <p className="text-sm font-bold font-mono text-cyan-400">Full System Governance</p>
+              <span className="text-[11px] text-slate-500 font-mono">Shops, Slips, Payouts, Financials</span>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-mono uppercase tracking-wider">Security State</span>
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              </div>
+              <p className="text-sm font-bold font-mono text-emerald-400">Bcrypt Protected</p>
+              <span className="text-[11px] text-slate-500 font-mono">10 Salt Rounds & JWT Verified</span>
+            </div>
+          </div>
+
+          {/* Admin Table */}
+          <div className="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white font-mono flex items-center gap-2">
+                  <Users className="h-4 w-4 text-cyan-400" />
+                  <span>បញ្ជីគណនី Admin ទាំងអស់ (All System Administrators)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  អ្នកគ្រប់គ្រងទាំងអស់មានសិទ្ធិចូលមើលទិន្នន័យហិរញ្ញវត្ថុ អនុម័តហាង និងបញ្ជាក់ការផ្ទេរប្រាក់
+                </p>
+              </div>
+              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-slate-900 border border-slate-700 text-slate-300">
+                {adminsList.length} Accounts
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-900/80 text-slate-400 font-mono text-[11px] uppercase border-b border-slate-800">
+                  <tr>
+                    <th className="p-3.5">Administrator</th>
+                    <th className="p-3.5">Email Address</th>
+                    <th className="p-3.5">Phone Number</th>
+                    <th className="p-3.5">Created Date</th>
+                    <th className="p-3.5 text-center">Status & Clearance</th>
+                    <th className="p-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-slate-200 font-mono">
+                  {adminsList.map((a) => {
+                    const isRoot = a.email === 'admin@cybertech.com';
+                    const isSelf = user.id === a.id;
+
+                    return (
+                      <tr key={a.id} className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={a.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(a.name)}`}
+                              alt={a.name}
+                              className="h-9 w-9 rounded-xl border border-rose-500/40 object-cover bg-slate-900"
+                            />
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-white text-sm">{a.name}</span>
+                                {isSelf && (
+                                  <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-bold">
+                                    {t('admin.youBadge')}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-mono">ID: #{a.id}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="p-3.5 text-slate-300 font-mono">
+                          <div className="flex items-center gap-1.5">
+                            <Mail className="h-3 w-3 text-slate-500" />
+                            <span>{a.email}</span>
+                          </div>
+                        </td>
+
+                        <td className="p-3.5 text-slate-400 font-mono">
+                          {a.phone ? (
+                            <div className="flex items-center gap-1.5">
+                              <Phone className="h-3 w-3 text-slate-500" />
+                              <span>{a.phone}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-600">—</span>
+                          )}
+                        </td>
+
+                        <td className="p-3.5 text-slate-400">
+                          {a.created_at ? new Date(a.created_at).toLocaleDateString() : 'System Seed'}
+                        </td>
+
+                        <td className="p-3.5 text-center">
+                          {isRoot ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 inline-flex items-center gap-1">
+                              <Key className="h-3 w-3" />
+                              {t('admin.primaryAdminBadge')}
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30 inline-flex items-center gap-1">
+                              <ShieldCheck className="h-3 w-3" />
+                              {t('admin.activeAdminBadge')}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="p-3.5 text-right">
+                          {isRoot ? (
+                            <span className="text-[11px] text-slate-500 font-mono flex items-center justify-end gap-1" title="Protected System Account">
+                              <Lock className="h-3 w-3" />
+                              Protected
+                            </span>
+                          ) : isSelf ? (
+                            <span className="text-[11px] text-slate-500 font-mono">Current Session</span>
+                          ) : (
+                            <button
+                              onClick={() => handleRevokeAdmin(a.id, a.email)}
+                              disabled={actionLoading === `revoke_${a.id}`}
+                              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-950/80 hover:text-rose-300 border border-slate-700/80 text-slate-400 text-xs font-mono font-bold transition-all inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              title={t('admin.revokeAdmin')}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                              <span>{t('admin.revokeAdmin')}</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL: SLIP INSPECTION (ពិនិត្យវិក្កយបត្រផ្ទេរប្រាក់ជាក់ស្ដែង) */}
       {selectedSlip && (() => {
         let details = {};
         if (selectedSlip.slip_details) {
@@ -1352,6 +1697,165 @@ export default function AdminDashboardPage() {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. MODAL: CREATE NEW ADMIN (បង្កើតគណនី Admin ថ្មី) */}
+      {isAdminModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div
+            onClick={() => setIsAdminModalOpen(false)}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+          />
+
+          <div className="relative w-full max-w-md rounded-3xl bg-[#0b1220] border border-rose-500/40 text-white shadow-2xl z-10 overflow-hidden my-6 animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                  <UserPlus className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white font-mono">
+                    {t('admin.createAdminTitle')}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">
+                    Full Level 1 Clearance & Governance Access
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsAdminModalOpen(false)}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreateAdmin} className="p-6 space-y-4">
+              <p className="text-xs text-slate-400">
+                {t('admin.createAdminDesc')}
+              </p>
+
+              {adminFormError && (
+                <div className="p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 text-xs font-mono">
+                  {adminFormError}
+                </div>
+              )}
+
+              {adminFormSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>{adminFormSuccess}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  {t('admin.adminName')} *
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={newAdminForm.name}
+                    onChange={(e) => setNewAdminForm({ ...newAdminForm, name: e.target.value })}
+                    placeholder="e.g. Admin Saniya"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500 font-sans"
+                  />
+                  <UserIcon className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  {t('admin.adminEmail')} *
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    required
+                    value={newAdminForm.email}
+                    onChange={(e) => setNewAdminForm({ ...newAdminForm, email: e.target.value })}
+                    placeholder="admin-name@cybertech.com"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500 font-sans"
+                  />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-slate-300">
+                    {t('admin.adminPassword')} *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={generateRandomPassword}
+                    className="text-[10px] text-cyan-400 hover:text-cyan-300 font-mono hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Auto-Generate
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showAdminPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={newAdminForm.password}
+                    onChange={(e) => setNewAdminForm({ ...newAdminForm, password: e.target.value })}
+                    placeholder="Min. 6 characters"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500 font-mono"
+                  />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    className="absolute right-3 top-3 text-slate-500 hover:text-slate-300 cursor-pointer"
+                  >
+                    {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  {t('admin.adminPhone')}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={newAdminForm.phone}
+                    onChange={(e) => setNewAdminForm({ ...newAdminForm, phone: e.target.value })}
+                    placeholder="+855 12 345 678"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500 font-sans"
+                  />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={adminFormLoading}
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black font-mono text-xs shadow-glow-rose hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>{adminFormLoading ? 'Creating Admin...' : t('admin.submitCreateAdmin')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAdminModalOpen(false)}
+                  className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs cursor-pointer"
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

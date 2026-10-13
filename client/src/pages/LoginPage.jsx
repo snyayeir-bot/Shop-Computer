@@ -94,6 +94,47 @@ export default function LoginPage() {
           </button>
         </form>
 
+        {/* Quick Demo Credentials Autofill */}
+        <div className="pt-2 border-t border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>⚡ Quick Demo Login:</span>
+            <span className="text-[10px] text-cyan-400">Click to fill</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('demo@demo.com');
+                setPassword('demo123');
+              }}
+              className="p-2.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-500/30 text-left transition-all hover:scale-[1.02]"
+            >
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[11px] font-bold text-cyan-400 font-mono">Demo User</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold">1-Click</span>
+              </div>
+              <p className="text-[10px] text-slate-300 truncate font-mono">demo@demo.com</p>
+              <p className="text-[9px] text-slate-500 font-mono">Pass: demo123</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@cybertech.com');
+                setPassword('admin123');
+              }}
+              className="p-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-left transition-all hover:scale-[1.02]"
+            >
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[11px] font-bold text-purple-400 font-mono">Super Admin</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono font-bold">1-Click</span>
+              </div>
+              <p className="text-[10px] text-slate-300 truncate font-mono">admin@cybertech.com</p>
+              <p className="text-[9px] text-slate-500 font-mono">Pass: admin123</p>
+            </button>
+          </div>
+        </div>
+
         <div className="text-center pt-2 border-t border-slate-800 text-xs text-slate-400">
           Don't have an account yet?{' '}
           <Link to="/register" className="text-cyan-400 font-bold hover:underline font-mono">

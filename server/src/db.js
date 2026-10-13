@@ -295,7 +295,37 @@ export const initDb = async () => {
               );
               console.log("Default Admin Account initialized: admin@cybertech.com / admin123");
             }
-            resolve(true);
+
+            // Ensure demo account exists: demo@demo.com / demo123
+            db.get("SELECT id FROM users WHERE email = 'demo@demo.com'", async (demoErr, demoRow) => {
+              if (!demoRow) {
+                const demoHash = await bcrypt.hash("demo123", 10);
+                const demoRes = await execute(
+                  `INSERT INTO users (name, email, password, role, phone, avatar) VALUES (?, ?, ?, 'seller', ?, ?)`,
+                  ['demo', 'demo@demo.com', demoHash, '+855 12 345 678', 'https://api.dicebear.com/7.x/bottts/svg?seed=demo']
+                );
+                // Create Demo Shop
+                const shopRes = await execute(
+                  `INSERT OR IGNORE INTO shops (seller_id, shop_name, description, is_approved) VALUES (?, ?, ?, 1)`,
+                  [demoRes.lastID, 'Demo PC Store', 'Official Demo Hardware & PC Store']
+                );
+                // Create user wallet with 1,000 Credits
+                await execute(
+                  `INSERT OR IGNORE INTO user_wallets (user_id, balance) VALUES (?, 1000.00)`,
+                  [demoRes.lastID]
+                );
+                // Create shop wallet with 500 Credits
+                const shopRow = await getOne('SELECT id FROM shops WHERE seller_id = ?', [demoRes.lastID]);
+                if (shopRow) {
+                  await execute(
+                    `INSERT OR IGNORE INTO shop_wallets (shop_id, available_balance, pending_balance) VALUES (?, 500.00, 0.00)`,
+                    [shopRow.id]
+                  );
+                }
+                console.log("Default Demo Account initialized: demo@demo.com / demo123");
+              }
+              resolve(true);
+            });
           });
         });
       } catch (e) {
