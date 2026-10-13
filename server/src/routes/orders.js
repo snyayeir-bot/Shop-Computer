@@ -60,17 +60,75 @@ router.post('/', verifyToken, async (req, res, next) => {
       const shippingFee = 0.01; 
       const grandTotal = Number((subtotal + taxAmount + shippingFee).toFixed(2));
 
+      // Enforce Wallet Credits Payment:
+      // Combines personal wallet balance and shop available credits (for shop owners)
+      let personalWallet = await getOne('SELECT id, balance FROM user_wallets WHERE user_id = ?', [buyerId]);
+      if (!personalWallet) {
+        await execute('INSERT OR IGNORE INTO user_wallets (user_id, balance) VALUES (?, 0.00)', [buyerId]);
+        personalWallet = await getOne('SELECT id, balance FROM user_wallets WHERE user_id = ?', [buyerId]);
+      }
+      const personalBalance = personalWallet ? Number(personalWallet.balance || 0) : 0;
+
+      // Check shop(s) owned by buyer
+      const buyerShops = await query('SELECT id FROM shops WHERE seller_id = ?', [buyerId]);
+      const shopWalletsList = [];
+      let totalShopAvailable = 0;
+      for (const bs of buyerShops) {
+        let sw = await getOne('SELECT id, available_balance FROM shop_wallets WHERE shop_id = ?', [bs.id]);
+        if (!sw) {
+          await execute('INSERT OR IGNORE INTO shop_wallets (shop_id, available_balance, pending_balance) VALUES (?, 0.00, 0.00)', [bs.id]);
+          sw = await getOne('SELECT id, available_balance FROM shop_wallets WHERE shop_id = ?', [bs.id]);
+        }
+        if (sw) {
+          shopWalletsList.push(sw);
+          totalShopAvailable += Number(sw.available_balance || 0);
+        }
+      }
+
+      const totalAvailable = Number((personalBalance + totalShopAvailable).toFixed(2));
+      if (totalAvailable < grandTotal) {
+        throw new Error(
+          `សមតុល្យ Credits មិនគ្រប់គ្រាន់ទេ! អ្នកមាន ${totalAvailable.toFixed(2)} Credits (សមតុល្យផ្ទាល់ខ្លួន: ${personalBalance.toFixed(2)}, ចំណូលហាង: ${totalShopAvailable.toFixed(2)}), ត្រូវការ ${grandTotal.toFixed(2)} Credits សម្រាប់ការកុម្ម៉ង់នេះ។ សូមបញ្ចូលលុយ (Top-Up) បន្ថែម។`
+        );
+      }
+
+      // Deduct Credits: Deduct from personal wallet first, then remaining from shop wallet(s)
+      let remainingToDeduct = grandTotal;
+      if (personalBalance > 0) {
+        const deductFromPersonal = Math.min(personalBalance, remainingToDeduct);
+        await execute(
+          `UPDATE user_wallets SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`,
+          [deductFromPersonal, buyerId]
+        );
+        remainingToDeduct = Number((remainingToDeduct - deductFromPersonal).toFixed(2));
+      }
+
+      if (remainingToDeduct > 0) {
+        for (const sw of shopWalletsList) {
+          if (remainingToDeduct <= 0) break;
+          const currentShopBal = Number(sw.available_balance || 0);
+          if (currentShopBal > 0) {
+            const deductFromShop = Math.min(currentShopBal, remainingToDeduct);
+            await execute(
+              `UPDATE shop_wallets SET available_balance = available_balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+              [deductFromShop, sw.id]
+            );
+            remainingToDeduct = Number((remainingToDeduct - deductFromShop).toFixed(2));
+          }
+        }
+      }
+
       // 2. Insert into orders table
       const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
       const orderResult = await execute(
         `INSERT INTO orders (order_number, buyer_id, total_amount, tax_amount, shipping_fee, payment_method, payment_status, order_status, shipping_address, notes)
-         VALUES (?, ?, ?, ?, ?, ?, 'paid', 'processing', ?, ?)`,
-        [orderNumber, buyerId, grandTotal, taxAmount, shippingFee, paymentMethod, shippingAddress.trim(), notes]
+         VALUES (?, ?, ?, ?, ?, 'wallet_credits', 'paid', 'processing', ?, ?)`,
+        [orderNumber, buyerId, grandTotal, taxAmount, shippingFee, shippingAddress.trim(), notes]
       );
 
       const orderId = orderResult.lastID;
 
-      // 3. Insert order_items and decrement product stock atomically
+      // 3. Insert order_items and decrement product stock atomically, and credit shop wallets
       for (const vi of verifiedItems) {
         await execute(
           `INSERT INTO order_items (order_id, product_id, shop_id, quantity, price_each)
@@ -84,6 +142,21 @@ router.post('/', verifyToken, async (req, res, next) => {
            WHERE id = ?`,
           [vi.quantity, vi.productId]
         );
+
+        // Credit seller shop wallet available balance
+        const lineTotal = vi.priceEach * vi.quantity;
+        const shopWallet = await getOne('SELECT id FROM shop_wallets WHERE shop_id = ?', [vi.shopId]);
+        if (shopWallet) {
+          await execute(
+            `UPDATE shop_wallets SET available_balance = available_balance + ?, updated_at = CURRENT_TIMESTAMP WHERE shop_id = ?`,
+            [lineTotal, vi.shopId]
+          );
+        } else {
+          await execute(
+            `INSERT INTO shop_wallets (shop_id, available_balance, pending_balance) VALUES (?, ?, 0.00)`,
+            [vi.shopId, lineTotal]
+          );
+        }
       }
 
       // Commit transaction
@@ -91,7 +164,9 @@ router.post('/', verifyToken, async (req, res, next) => {
 
       res.status(201).json({
         success: true,
-        message: 'Order created successfully and payment processed!',
+        message: paymentMethod === 'wallet_credits'
+          ? 'Order placed successfully and paid via Wallet Credits!'
+          : 'Order created successfully and payment processed!',
         order: {
           id: orderId,
           orderNumber,

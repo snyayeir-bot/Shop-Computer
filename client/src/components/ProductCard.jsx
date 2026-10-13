@@ -115,9 +115,9 @@ export default function ProductCard({ product, onSelect }) {
         {/* Price & Action */}
         <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
           <div>
-            <span className="text-[10px] text-slate-400 uppercase font-mono block">MSRP Price</span>
-            <span className="text-lg font-extrabold font-mono text-cyan-400">
-              ${product.price.toFixed(2)}
+            <span className="text-[10px] text-slate-400 uppercase font-mono block">តម្លៃ Credits</span>
+            <span className="text-base sm:text-lg font-black font-mono text-amber-400">
+              {product.price.toFixed(2)} Credits
             </span>
           </div>
 

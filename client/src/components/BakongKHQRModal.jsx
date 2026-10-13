@@ -334,28 +334,7 @@ export default function BakongKHQRModal({
                 </button>
               </div>
 
-              {/* KHPay Gateway & Hosted Link if available */}
-              {khqrMeta?.payment_url && (
-                <div className="pt-1">
-                  <a
-                    href={khqrMeta.payment_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-mono font-bold flex items-center justify-center gap-1.5 border border-emerald-200 transition-colors"
-                  >
-                    <span>Open KHPay Web Checkout</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-              )}
-
-              {/* API Key Tag */}
-              <div className="flex items-center justify-center gap-1 text-[10px] font-mono text-slate-400">
-                <Key className="h-3 w-3 text-cyan-600" />
-                <span>Gateway: KHPay Site (API: {khqrMeta?.apiKeyUsed || 'ak_e486...62fe'})</span>
-              </div>
-
-              {/* Interactive Simulation Button */}
+              {/* Interactive Confirmation Button */}
               <div className="pt-1">
                 <button
                   onClick={handleSimulatePayment}
@@ -365,12 +344,12 @@ export default function BakongKHQRModal({
                   {isVerifying ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Verifying with KHPay / Bakong...</span>
+                      <span>Verifying ACLEDA Mobile Transfer...</span>
                     </>
                   ) : (
                     <>
                       <Smartphone className="h-4 w-4" />
-                      <span>Simulate Mobile App Scan & Pay</span>
+                      <span>ខ្ញុំបានស្កេនបាញ់លុយរួចរាល់ (Confirm Payment)</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}

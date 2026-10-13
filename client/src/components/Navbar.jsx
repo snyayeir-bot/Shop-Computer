@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Cpu, 
-  ShoppingCart, 
-  User, 
-  Store, 
-  ShieldAlert, 
-  LogOut, 
-  Sparkles, 
-  Menu, 
-  X, 
-  Search, 
+import {
+  Cpu,
+  ShoppingCart,
+  User,
+  Store,
+  ShieldAlert,
+  LogOut,
+  Sparkles,
+  Menu,
+  X,
+  Search,
   LogIn,
-  UserPlus
+  UserPlus,
+  Coins
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useWallet } from '../context/WalletContext';
 
 export default function Navbar() {
   const { user, logout, openAuthModal } = useAuth();
   const { totalCount, setIsDrawerOpen } = useCart();
+  const { balance, setIsTopUpOpen } = useWallet();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,6 +33,7 @@ export default function Navbar() {
     if (navSearch.trim()) {
       navigate(`/products?search=${encodeURIComponent(navSearch.trim())}`);
     }
+    console.log(totalCount);
   };
 
   return (
@@ -37,7 +41,7 @@ export default function Navbar() {
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          
+
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 via-indigo-600 to-purple-600 p-[1px] shadow-glow-cyan transition-transform group-hover:scale-105">
@@ -73,11 +77,10 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center gap-1 font-medium text-sm">
             <Link
               to="/products"
-              className={`px-3 py-2 rounded-lg transition-colors ${
-                location.pathname === '/products'
+              className={`px-3 py-2 rounded-lg transition-colors ${location.pathname === '/products'
                   ? 'text-cyan-400 bg-cyan-950/30 border border-cyan-500/20'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
+                }`}
             >
               Hardware Catalog
             </Link>
@@ -85,11 +88,10 @@ export default function Navbar() {
             {user?.role === 'seller' && (
               <Link
                 to="/seller"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${
-                  location.pathname.startsWith('/seller')
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${location.pathname.startsWith('/seller')
                     ? 'text-indigo-400 bg-indigo-950/30 border border-indigo-500/20'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
+                  }`}
               >
                 <Store className="h-4 w-4 text-indigo-400" />
                 Seller Portal
@@ -99,11 +101,10 @@ export default function Navbar() {
             {user?.role === 'admin' && (
               <Link
                 to="/admin"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${
-                  location.pathname.startsWith('/admin')
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${location.pathname.startsWith('/admin')
                     ? 'text-rose-400 bg-rose-950/30 border border-rose-500/20'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
+                  }`}
               >
                 <ShieldAlert className="h-4 w-4 text-rose-400" />
                 Admin Panel
@@ -113,11 +114,10 @@ export default function Navbar() {
             {user && (
               <Link
                 to="/profile"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${
-                  location.pathname === '/profile'
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${location.pathname === '/profile'
                     ? 'text-cyan-400 bg-cyan-950/30 border border-cyan-500/20'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
+                  }`}
               >
                 <User className="h-4 w-4" />
                 Dashboard
@@ -125,8 +125,24 @@ export default function Navbar() {
             )}
           </nav>
 
-          {/* Actions: Cart & Profile Auth */}
+          {/* Actions: Wallet Credits, Cart & Profile Auth */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Wallet Credits Badge & Top-Up trigger */}
+            {user && (
+              <button
+                onClick={() => setIsTopUpOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition-all font-mono shadow-sm group"
+                title="Top-Up Wallet Credits via ACLEDA KHQR"
+              >
+                <Coins className="h-4 w-4 text-amber-400 group-hover:rotate-12 transition-transform" />
+                <span className="text-xs font-black">{balance.toFixed(2)}</span>
+                <span className="text-[10px] uppercase font-bold text-amber-400/80 hidden sm:inline">Credits</span>
+                <span className="ml-1 text-[10px] bg-amber-500 text-black font-extrabold px-1.5 py-0.2 rounded-md">
+                  + Top-Up
+                </span>
+              </button>
+            )}
+
             {/* Cart Drawer Trigger */}
             <button
               onClick={() => setIsDrawerOpen(true)}

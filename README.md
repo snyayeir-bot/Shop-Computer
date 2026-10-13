@@ -1,85 +1,171 @@
-# 🚀 Multi-Vendor Computer Hardware & Laptop E-Commerce Platform
-*(CYBERTECH Platform - Full-Stack Application)*
+# 💻 CYBERTECH — Multi-Vendor Computer Hardware E-Commerce Platform
 
-A complete, production-ready Multi-Vendor Computer Hardware & Laptop E-Commerce Platform built with **React.js + Vite + Tailwind CSS (Dark-Tech Cyber Aesthetic)** on the frontend, and **Node.js + Express.js + JWT RBAC + ACID SQL Database Engine** on the backend.
+[![React](https://img.shields.io/badge/React-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.1-646cff?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Python](https://img.shields.io/badge/Python-Flask%20%7C%20AI%20Vision-3776AB?logo=python&logoColor=white)](https://python.org/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Dark--Tech-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
----
-
-## 🛠️ Tech Stack & Architecture
-
-### 1. Frontend (`/client`)
-- **Framework:** React.js 18 with Vite
-- **Styling:** Tailwind CSS (Dark-Tech aesthetic: `#070c18` background, Slate-900 glass cards, Cyan & Indigo accents, glowing highlights)
-- **Icons:** Lucide React (`lucide-react`)
-- **Routing & State:** React Router Dom v6, React Context (AuthContext & CartContext)
-- **HTTP Client:** Axios with JWT Bearer Interceptors
-
-### 2. Backend API (`/server`)
-- **Runtime:** Node.js (ES Modules) + Express.js
-- **Authentication & Security:** JWT (JSON Web Tokens) with role checks (`buyer`, `seller`, `admin`), `bcryptjs`, CORS, Helmet
-- **Database & Transactions:** SQL Relational Schema (`server/database/schema.sql`) + SQLite / MySQL 8.0 auto-boot engine with ACID transaction rollback for atomic order checkouts and stock decrements.
+> **វេទិកាពាណិជ្ជកម្មអេឡិចត្រូនិចលក់គ្រឿងបន្លាស់កុំព្យូទ័រ និង Laptop ពហុអ្នកលក់ (Multi-Vendor)**
+> រួមបញ្ចូលប្រព័ន្ធ **Bakong KHQR**, **កាបូបលុយ Wallet (Credits)**, និង **AI ស្គែនវិក្កយបត្រធនាគារស្វ័យប្រវត្តិ (Bank Slip Scanner with Gemini AI)**។
 
 ---
 
-## 💻 Portals & Capabilities
+## 🌟 លក្ខណៈពិសេសចម្បង (Key Features)
 
-### 🛍️ A. Buyer Portal
-1. **Catalog & Multi-Spec Filters (`/products`):**
-   - Filter by Category (GPU, CPU, RAM, Laptop, Motherboard, PSU, Case, Storage).
-   - Multi-spec hardware filtering (Socket type: AM5/LGA1700, VRAM: 24GB/16GB/12GB/8GB, DDR: DDR5/DDR4, Brand, Price range slider).
-   - Responsive Product Grid with stock indicators (`In Stock`, `Low Stock < 5 units`, `Out of Stock`).
-2. **Interactive Cart Drawer & Checkout (`/checkout`):**
-   - Slide-in cart drawer grouped by Vendor/Shop.
-   - Real-time calculations: Subtotal, Shipping fee ($15 or FREE over $1500), Tax (VAT 10%), and Grand Total.
-   - Checkout with delivery address and Bakong KHQR dynamic QR / Card payment simulator.
-3. **Buyer Profile & Spending Dashboard (`/profile`):**
-   - Total spent metric card and completed order counter.
-   - Order history timeline with live status tracking (`pending`, `processing`, `shipped`, `delivered`).
+### 1. 🛍️ Buyer Portal (ផ្នែកអ្នកទិញ)
+- **កាតាឡុកផលិតផលទំនើប (Dark-Tech Cyber UI):** ស្វែងរក និងចម្រាញ់ផលិតផលតាម Category (GPU, CPU, RAM, Laptop, Motherboard, PSU, Case, Storage) និង Spec បច្ចេកទេស (Socket AM5/LGA1700, VRAM, DDR5/DDR4, Brand, Price Range)។
+- **កន្ត្រកទំនិញ (Smart Cart Drawer):** បែងចែកទំនិញតាមហាងនីមួយៗ (Vendor-grouped cart), គណនាពន្ធ VAT និងថ្លៃដឹកជញ្ជូនស្វ័យប្រវត្តិ។
+- **ប្រព័ន្ធកាបូបលុយ & បញ្ចូលទឹកប្រាក់ (Wallet & Top-up):**
+  - បង្ហាញសមតុល្យ Credit ផ្ទាល់លើ Navigation Bar។
+  - បញ្ចូលលុយតាមរយៈ **Bakong KHQR (ACLEDA, ABA, Bakong...)**។
+  - **ស្គែនបង្កាន់ដៃផ្ទេរប្រាក់ (Slip Scanner with AI):** គ្រាន់តែ Upload រូប Slip ធនាគារ ប្រព័ន្ធ AI Vision នឹងស្រង់ទិន្នន័យ (TxID, ចំនួនទឹកប្រាក់, ឈ្មោះ) ហើយបញ្ចូល Credit ដោយស្វ័យប្រវត្តិ ($1 = 1 Credit, 4,000៛ = 1 Credit)។
+- **Checkout សុវត្ថិភាពខ្ពស់:** គាំទ្រការទូទាត់តាម Wallet Credits, Bakong KHQR, និងកាតធនាគារ ដោយមាន ACID Transaction Rollback ការពារបញ្ហាកាត់លុយ ឬស្តុកមិនត្រឹមត្រូវ។
 
-### 🏬 B. Seller Portal (`/seller`)
-1. **Shop Registration & Profile Setup:**
-   - Store name, description, logo URL, and contact hotline form.
-2. **Product & Inventory Manager:**
-   - Add/Edit product modal with dynamic JSON key-value input for hardware specs (e.g. Socket, VRAM, TDP, Interface).
-   - Stock controls and "Low Stock Alert" warnings (`< 5 units`).
-3. **Vendor Analytics Dashboard:**
-   - 4 Metric cards: **Total Revenue ($)**, **Total Items Sold**, **Low Stock Alert**, **Unique Customers**.
-   - Customer purchase table: Buyer name, items bought, total spent, order status.
+### 2. 🏬 Seller Portal (ផ្នែកអ្នកលក់)
+- ចុះឈ្មោះ និងបង្កើតហាងផ្ទាល់ខ្លួន (Store Profile, Logo, Hotline)។
+- គ្រប់គ្រងទំនិញ និងស្តុក (Inventory & Spec Management) ជាមួយការដាស់តឿន Low Stock Alert (< 5 គ្រឿង)។
+- Dashboard វិភាគទិន្នន័យលក់៖ ចំណូលសរុប (Revenue), ចំនួនលក់បាន, អតិថិជន និងស្ថានភាពការបញ្ជាទិញ។
 
-### 🛡️ C. Super Admin Dashboard (`/admin`)
-1. **Platform Analytics:**
-   - Daily Active Users (DAU) metric, 7-day traffic chart overview.
-   - Financial breakdown: Total marketplace GMV, platform commission (5%), server expenses ($45), net profit.
-2. **Moderation Queue:**
-   - Vendor store approval table with Approve / Reject action buttons.
+### 3. 🛡️ Super Admin Portal (ផ្នែកគ្រប់គ្រងប្រព័ន្ធ)
+- ពិនិត្យមើល និងអនុម័តហាងរបស់អ្នកលក់ថ្មី (Vendor Approval Workflow)។
+- តាមដានស្ថិតិទូទៅនៃវេទិកា៖ GMV សរុប, កម្រៃជើងសារវេទិកា (Platform Commission 5%), ចំណេញសុទ្ធ។
 
 ---
 
-## ⚡ Demo Quick Logins (1-Click Switch in Top Navigation)
-- 👤 **Buyer Demo:** `buyer@demo.com` (Password: `password123`)
-- 🏬 **Seller Demo:** `seller@demo.com` (Password: `password123`)
-- 🛡️ **Super Admin Demo:** `admin@demo.com` (Password: `password123`)
+## 🛠️ រចនាសម្ព័ន្ធបច្ចេកវិទ្យា (Tech Stack)
+
+| ផ្នែក | បច្ចេកវិទ្យាដែលប្រើប្រាស់ |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Tailwind CSS (Dark Cyberpunk Theme), Lucide Icons, Axios |
+| **Backend API** | Node.js (ESM), Express.js, JWT Authentication, SQLite / MySQL Engine |
+| **AI / Slip Service** | Python 3, Flask, Google Gemini AI Vision (`google-genai`), OpenCV, Pyzbar |
+| **Payment Gateway** | Bakong KHQR EMVCo Standard, QR Generator |
 
 ---
 
-## 🚀 How to Run the Application
+## 📁 រចនាសម្ព័ន្ធ Folder (Project Structure)
 
-### Method 1: Run Both Client & Server Concurrently
-```bash
-npm start
+```text
+Shop-computer/
+├── client/              # Frontend React + Vite
+│   ├── src/
+│   │   ├── components/  # Navbar, CartDrawer, TopUpModal, BakongKHQRModal, etc.
+│   │   ├── context/     # AuthContext, CartContext, WalletContext
+│   │   └── pages/       # CatalogPage, CheckoutPage, ProfilePage, SellerPortalPage, AdminDashboardPage
+│   └── package.json
+├── server/              # Backend Express REST API (Port 5000)
+│   ├── database/        # schema.sql
+│   ├── src/             # routes (auth, products, orders, wallet, payment, admin)
+│   └── package.json
+├── playemt/             # Python Bank Slip Scanner Microservice (Port 5005)
+│   ├── server.py        # Flask API + Gemini Vision + KHQR Decoder
+│   └── .env.example
+├── strat.py             # Python All-in-One Startup Script (Client + Server + AI)
+├── package.json         # Root scripts (concurrently runner)
+└── README.md
 ```
 
-### Method 2: Run Separately in 2 Terminals
-**Terminal 1 (Backend API):**
+---
+
+## 🚀 របៀបតម្លើង និងដំណើរការ (Installation & Setup)
+
+### ១. តម្រូវការជាមុន (Prerequisites)
+- [Node.js](https://nodejs.org/) (កំណែ v18.0 ឬថ្មីជាង)
+- [Python](https://www.python.org/) (កំណែ v3.10 ឬថ្មីជាង)
+- Git
+
+### ២. ទាញយកគម្រោង (Clone Repository)
 ```bash
+git clone https://github.com/snyayeir-bot/Shop-Computer.git
+cd Shop-Computer
+```
+
+### ៣. តម្លើង Dependencies
+
+**Root & Frontend & Backend:**
+```bash
+# 1. Root dependencies
+npm install
+
+# 2. Server dependencies
 cd server
-npm start
-# API runs on http://localhost:5000
+npm install
+cd ..
+
+# 3. Client dependencies
+cd client
+npm install
+cd ..
 ```
 
-**Terminal 2 (Frontend Client):**
+**Python AI Slip Scanner (`playemt`):**
 ```bash
-cd client
-npm run dev
-# Frontend runs on http://localhost:3000
+cd playemt
+pip install flask flask-cors pillow opencv-python pyzbar python-dotenv google-genai
+cd ..
 ```
+
+### ៤. កំណត់ Environment Variables
+
+1. ចម្លង `server/.env.example` ទៅជា `server/.env`៖
+   ```bash
+   cp server/.env.example server/.env
+   ```
+2. ចម្លង `playemt/.env.example` ទៅជា `playemt/.env` និងដាក់ **Gemini API Key** របស់អ្នក៖
+   ```bash
+   cp playemt/.env.example playemt/.env
+   ```
+   *(ដាក់លេខកូដ `GEMINI_API_KEY=your_key` នៅក្នុងឯកសារ `playemt/.env`)*
+
+---
+
+## ⚡ របៀបដំណើរការប្រព័ន្ធ (Running the Project)
+
+អ្នកអាចជ្រើសរើសវិធីណាមួយខាងក្រោមដើម្បីដំណើរការ៖
+
+### វិធីទី ១៖ ប្រើប្រាស់ Python Startup Script (ណែនាំ ✨)
+ដំណើរការសេវាកម្មទាំង ៣ ព្រមគ្នា (Client + Server + AI Scanner) ក្នុងផ្ទាំងតែមួយ៖
+```powershell
+python strat.py
+```
+*(ចុច `Ctrl + C` ដើម្បីបិទសេវាកម្មទាំងអស់រួមគ្នា)*
+
+### វិធីទី ២៖ ប្រើប្រាស់ `npm start`
+```powershell
+npm start
+```
+
+### វិធីទី ៣៖ បើកដំណើរការដោយឡែកពីគ្នា (Manual Terminals)
+- **Terminal 1 (Backend API):**
+  ```bash
+  cd server && npm run dev
+  # ដំណើរការលើ: http://localhost:5000
+  ```
+- **Terminal 2 (AI Slip Scanner):**
+  ```bash
+  cd playemt && python server.py
+  # ដំណើរការលើ: http://localhost:5005
+  ```
+- **Terminal 3 (Frontend Client):**
+  ```bash
+  cd client && npm run dev
+  # ដំណើរការលើ: http://localhost:3000
+  ```
+
+---
+
+## 🔑 គណនីសាកល្បង (Demo Credentials)
+
+អ្នកអាចប្រើប្រាស់គណនីខាងក្រោម ឬចុចប៊ូតុង **Demo Switch** នៅលើ Navigation Bar ខាងលើដើម្បីសាកល្បង៖
+
+| តួនាទី (Role) | អ៊ីមែល (Email) | ពាក្យសម្ងាត់ (Password) | សិទ្ធិប្រើប្រាស់ |
+| :--- | :--- | :--- | :--- |
+| **Buyer** | `buyer@demo.com` | `password123` | ទិញទំនិញ, បញ្ចូលលុយ Wallet, ស្គែន Slip |
+| **Seller** | `seller@demo.com` | `password123` | បង្កើតហាង, គ្រប់គ្រងទំនិញ, មើលចំណូល |
+| **Super Admin** | `admin@demo.com` | `password123` | អនុម័តហាង, ពិនិត្យមើលរបាយការណ៍ហិរញ្ញវត្ថុ |
+
+---
+
+## 📄 អាជ្ញាប័ណ្ណ (License)
+គម្រោងនេះស្ថិតនៅក្រោម [MIT License](LICENSE)។

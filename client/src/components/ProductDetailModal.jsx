@@ -79,8 +79,8 @@ export default function ProductDetailModal({ product, onClose }) {
               </h2>
 
               <div className="mt-3 flex items-baseline gap-3">
-                <span className="text-2xl font-black font-mono text-cyan-400">
-                  ${product.price?.toFixed(2)}
+                <span className="text-2xl font-black font-mono text-amber-400">
+                  {product.price?.toFixed(2)} Credits
                 </span>
                 <span className="text-xs font-mono text-slate-400">
                   Stock: <strong className={product.stock_quantity < 5 ? 'text-amber-400' : 'text-emerald-400'}>

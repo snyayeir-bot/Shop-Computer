@@ -7,10 +7,21 @@ server/node_modules/
 client/dist/
 dist/
 
-# Environment Variables & Secrets
+# Environment Variables & Secrets (CRITICAL: Do not push API keys)
 .env
+*.env
+**/.env
 server/.env
+playemt/.env
 *.env.local
+
+# Python cache & virtual environments
+__pycache__/
+*/__pycache__/
+**/*.pyc
+*.pyc
+.venv/
+venv/
 
 # SQLite Database
 *.sqlite

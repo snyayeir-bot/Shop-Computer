@@ -28,7 +28,12 @@ import {
   Truck,
   FileText,
   CreditCard,
-  X
+  X,
+  Coins,
+  ArrowUpRight,
+  QrCode,
+  Upload,
+  FileCheck2
 } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -36,12 +41,27 @@ import { useAuth } from '../context/AuthContext';
 export default function SellerPortalPage() {
   const { user, switchDemoUser } = useAuth();
   
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'orders' | 'inventory' | 'settings'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'orders' | 'inventory' | 'wallet' | 'settings'
   const [dashboardData, setDashboardData] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Shop Wallet & Withdrawals state
+  const [shopWallet, setShopWallet] = useState({ availableBalance: 0, pendingBalance: 0 });
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [withdrawForm, setWithdrawForm] = useState({
+    amount: '',
+    bankName: 'ACLEDA Bank Plc.',
+    bankAccountName: '',
+    bankAccountNumber: '',
+    sellerQrImage: ''
+  });
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
+  const [withdrawMsg, setWithdrawMsg] = useState('');
+  const [selectedProofModal, setSelectedProofModal] = useState(null);
+  const [selectedQrModal, setSelectedQrModal] = useState(null);
 
   // Filter & Search state for Orders
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
@@ -88,16 +108,24 @@ export default function SellerPortalPage() {
   const fetchVendorData = async () => {
     setLoading(true);
     try {
-      const [dashRes, prodRes, catRes] = await Promise.all([
+      const [dashRes, prodRes, catRes, walletRes, withRes] = await Promise.all([
         api.get('/seller/dashboard'),
         api.get('/seller/products'),
-        api.get('/products/categories')
+        api.get('/products/categories'),
+        api.get('/wallet/seller/balance').catch(() => ({ data: { wallet: { availableBalance: 0, pendingBalance: 0 } } })),
+        api.get('/wallet/seller/withdrawals').catch(() => ({ data: { withdrawals: [] } }))
       ]);
 
       setDashboardData(dashRes.data);
       setOrders(dashRes.data.allOrders || []);
       setProducts(prodRes.data.products || []);
       setCategories(catRes.data.categories || []);
+      if (walletRes.data?.wallet) {
+        setShopWallet(walletRes.data.wallet);
+      }
+      if (withRes.data?.withdrawals) {
+        setWithdrawals(withRes.data.withdrawals);
+      }
 
       if (dashRes.data.shop) {
         setShopForm({
@@ -113,6 +141,43 @@ export default function SellerPortalPage() {
       console.error('Failed to fetch seller data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleQrUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setWithdrawForm(prev => ({ ...prev, sellerQrImage: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRequestWithdrawal = async (e) => {
+    e.preventDefault();
+    if (!withdrawForm.amount || parseFloat(withdrawForm.amount) <= 0) {
+      alert('Please enter a valid withdrawal amount');
+      return;
+    }
+    setWithdrawSubmitting(true);
+    setWithdrawMsg('');
+    try {
+      const res = await api.post('/wallet/seller/withdraw', withdrawForm);
+      setWithdrawMsg(res.data.message || 'Withdrawal request submitted successfully!');
+      setWithdrawForm({
+        amount: '',
+        bankName: 'ACLEDA Bank Plc.',
+        bankAccountName: '',
+        bankAccountNumber: '',
+        sellerQrImage: ''
+      });
+      fetchVendorData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Withdrawal failed');
+    } finally {
+      setWithdrawSubmitting(false);
     }
   };
 
@@ -378,6 +443,17 @@ export default function SellerPortalPage() {
             Inventory ({products.length})
           </button>
           <button
+            onClick={() => setActiveTab('wallet')}
+            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === 'wallet'
+                ? 'bg-indigo-600 text-white shadow-glow-indigo'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Coins className="h-3.5 w-3.5 text-amber-400" />
+            <span>Shop Wallet ({shopWallet.availableBalance.toFixed(2)} Credits)</span>
+          </button>
+          <button
             onClick={() => setActiveTab('settings')}
             className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
               activeTab === 'settings'
@@ -394,26 +470,63 @@ export default function SellerPortalPage() {
       {activeTab === 'dashboard' && (
         <div className="space-y-8">
           
-          {/* 4 Required Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Metric 1: Total Revenue */}
+          {/* 5 Required Metric Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Metric 1: Available Shop Balance (សមតុល្យជាក់ស្ដែង) */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-950/60 via-slate-900 to-slate-950 border-2 border-amber-500/50 space-y-2 shadow-glow-amber">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-mono uppercase tracking-wider text-amber-300 font-bold">សមតុល្យហាង (Available)</span>
+                <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400">
+                  <Coins className="h-4 w-4" />
+                </div>
+              </div>
+              <p className="text-2xl font-black font-mono text-amber-400">
+                {Number(shopWallet.availableBalance || 0).toFixed(2)} Credits
+              </p>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                <span className="text-emerald-400 font-medium">✓ អាចដកបាន ឬប្រើទិញទំនិញបាន</span>
+                {Number(shopWallet.pendingBalance || 0) > 0 && (
+                  <span className="text-indigo-400">({Number(shopWallet.pendingBalance).toFixed(2)} Pending)</span>
+                )}
+              </div>
+            </div>
+
+            {/* Metric 2: Total Paid Out / Withdrawn (បានដកសរុប) */}
             <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-mono uppercase tracking-wider">Total Revenue ($)</span>
+                <span className="text-xs font-mono uppercase tracking-wider">បានដកសរុប (Withdrawn)</span>
                 <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-                  <DollarSign className="h-4 w-4" />
+                  <ArrowUpRight className="h-4 w-4" />
                 </div>
               </div>
               <p className="text-2xl font-black font-mono text-emerald-400">
-                ${Number(metrics.totalRevenue).toFixed(2)}
+                {withdrawals
+                  .filter((w) => w.status === 'approved')
+                  .reduce((sum, w) => sum + Number(w.amount || 0), 0)
+                  .toFixed(2)}{' '}
+                Credits
               </p>
-              <span className="text-[11px] text-slate-500 font-mono">From paid customer orders</span>
+              <span className="text-[11px] text-slate-500 font-mono">Approved bank payouts</span>
             </div>
 
-            {/* Metric 2: Total Items Sold */}
+            {/* Metric 3: Total Sales Revenue */}
             <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-mono uppercase tracking-wider">Total Units Sold</span>
+                <span className="text-xs font-mono uppercase tracking-wider">ចំណូលលក់សរុប (Gross)</span>
+                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                  <Store className="h-4 w-4" />
+                </div>
+              </div>
+              <p className="text-2xl font-black font-mono text-white">
+                {Number(metrics.totalRevenue).toFixed(2)} Credits
+              </p>
+              <span className="text-[11px] text-slate-500 font-mono">All-time order sales</span>
+            </div>
+
+            {/* Metric 4: Total Items Sold */}
+            <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-mono uppercase tracking-wider">Units Sold</span>
                 <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
                   <Package className="h-4 w-4" />
                 </div>
@@ -424,10 +537,10 @@ export default function SellerPortalPage() {
               <span className="text-[11px] text-slate-500 font-mono">Hardware dispatched</span>
             </div>
 
-            {/* Metric 3: Low Stock Alert Warning (< 5 units) */}
+            {/* Metric 5: Low Stock Alert Warning (< 5 units) */}
             <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-mono uppercase tracking-wider">Low Stock Alert</span>
+                <span className="text-xs font-mono uppercase tracking-wider">Low Stock</span>
                 <div className={`p-2 rounded-lg ${metrics.lowStockAlert > 0 ? 'bg-amber-500/20 text-amber-400 animate-pulse' : 'bg-slate-800 text-slate-400'}`}>
                   <AlertTriangle className="h-4 w-4" />
                 </div>
@@ -436,20 +549,6 @@ export default function SellerPortalPage() {
                 {metrics.lowStockAlert} Items
               </p>
               <span className="text-[11px] text-slate-500 font-mono">Stock level &lt; 5 units</span>
-            </div>
-
-            {/* Metric 4: Unique Customers */}
-            <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-mono uppercase tracking-wider">Unique Customers</span>
-                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-                  <Users className="h-4 w-4" />
-                </div>
-              </div>
-              <p className="text-2xl font-black font-mono text-indigo-400">
-                {metrics.uniqueCustomers} Buyers
-              </p>
-              <span className="text-[11px] text-slate-500 font-mono">Distinct customer accounts</span>
             </div>
           </div>
 
@@ -502,8 +601,8 @@ export default function SellerPortalPage() {
                         <td className="p-3 text-slate-400 font-mono">{cust.customer_email}</td>
                         <td className="p-3 text-center font-mono font-bold text-indigo-400">{cust.orders_count}</td>
                         <td className="p-3 text-center font-mono">{cust.items_bought}</td>
-                        <td className="p-3 text-right font-mono font-bold text-cyan-400">
-                          ${Number(cust.total_spent).toFixed(2)}
+                        <td className="p-3 text-right font-mono font-bold text-amber-400">
+                          {Number(cust.total_spent).toFixed(2)} Credits
                         </td>
                         <td className="p-3 text-right font-mono text-slate-400">
                           {new Date(cust.last_order_date).toLocaleDateString()}
@@ -630,7 +729,7 @@ export default function SellerPortalPage() {
                                     x{it.quantity}
                                   </span>
                                   <span className="truncate">{it.product_name}</span>
-                                  <span className="text-slate-500 font-mono text-[10px]">(${it.price_each?.toFixed(2)})</span>
+                                  <span className="text-slate-500 font-mono text-[10px]">({it.price_each?.toFixed(2)} Credits)</span>
                                 </div>
                               ))}
                               {ord.items?.length > 2 && (
@@ -642,10 +741,10 @@ export default function SellerPortalPage() {
                           </td>
 
                           <td className="p-3.5 text-right font-mono">
-                            <p className="text-sm font-bold text-cyan-400">
-                              ${Number(ord.shop_subtotal || 0).toFixed(2)}
+                            <p className="text-sm font-bold text-amber-400">
+                              {Number(ord.shop_subtotal || 0).toFixed(2)} Credits
                             </p>
-                            <span className="text-[10px] text-slate-500">Paid with {ord.payment_method || 'KHQR'}</span>
+                            <span className="text-[10px] text-slate-500">Paid with {ord.payment_method || 'Credits'}</span>
                           </td>
 
                           <td className="p-3.5 text-center">
@@ -745,8 +844,8 @@ export default function SellerPortalPage() {
                         </td>
 
                         <td className="p-3.5 font-mono">
-                          <p className="text-cyan-400 font-bold">${p.price.toFixed(2)}</p>
-                          <p className="text-[10px] text-slate-500">Cost: ${p.cost_price?.toFixed(2) || '0.00'}</p>
+                          <p className="text-amber-400 font-bold">{p.price.toFixed(2)} Credits</p>
+                          <p className="text-[10px] text-slate-500">Cost: {p.cost_price?.toFixed(2) || '0.00'} Credits</p>
                         </td>
 
                         <td className="p-3.5 text-center">
@@ -800,7 +899,279 @@ export default function SellerPortalPage() {
         </div>
       )}
 
-      {/* 4. SHOP REGISTRATION & PROFILE SETTINGS TAB */}
+      {/* 4. SHOP WALLET & PAYOUTS TAB */}
+      {activeTab === 'wallet' && (
+        <div className="space-y-8">
+          {/* Balance Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Available Balance */}
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-[#0e1b30] via-slate-900 to-[#070c18] border border-amber-500/30 space-y-3 shadow-glow-amber">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
+                  <Coins className="h-4 w-4" />
+                  Available Shop Balance
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
+                  Ready to Withdraw
+                </span>
+              </div>
+              <p className="text-3xl font-black font-mono text-amber-400">
+                {Number(shopWallet.availableBalance || 0).toFixed(2)}
+                <span className="text-sm font-sans font-normal text-slate-400 ml-1.5">Credits</span>
+              </p>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Earnings from customer orders paid with Wallet Credits ($1 = 1 Credit).
+              </p>
+            </div>
+
+            {/* Pending Balance */}
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-[#12192c] via-slate-900 to-[#070c18] border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-indigo-400" />
+                  Pending Withdrawal Requests
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-500/30">
+                  Admin Processing
+                </span>
+              </div>
+              <p className="text-3xl font-black font-mono text-slate-200">
+                {Number(shopWallet.pendingBalance || 0).toFixed(2)}
+                <span className="text-sm font-sans font-normal text-slate-400 ml-1.5">Credits</span>
+              </p>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Funds currently submitted for bank transfer payout awaiting admin confirmation.
+              </p>
+            </div>
+          </div>
+
+          {/* Withdrawal Request Form */}
+          <div className="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 space-y-6">
+            <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-white font-mono flex items-center gap-2">
+                  <ArrowUpRight className="h-5 w-5 text-cyan-400" />
+                  Request Payout / Withdrawal to Bank Account
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Withdraw your shop earnings to your ACLEDA Bank, ABA, or any Cambodian bank account.
+                </p>
+              </div>
+            </div>
+
+            {withdrawMsg && (
+              <div className="p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                <span>{withdrawMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleRequestWithdrawal} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Withdrawal Amount (Credits)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    max={shopWallet.availableBalance}
+                    required
+                    value={withdrawForm.amount}
+                    onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
+                    placeholder={`Max: ${shopWallet.availableBalance.toFixed(2)} Credits`}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-amber-400 font-mono font-bold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Recipient Bank</label>
+                  <select
+                    value={withdrawForm.bankName}
+                    onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                  >
+                    <option value="ACLEDA Bank Plc.">ACLEDA Bank Plc. (Member of KHQR)</option>
+                    <option value="ABA Bank">ABA Bank</option>
+                    <option value="Canadia Bank">Canadia Bank</option>
+                    <option value="Wing Bank">Wing Bank</option>
+                    <option value="Bakong App">Bakong NBC</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Bank Account Holder Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={withdrawForm.bankAccountName}
+                    onChange={(e) => setWithdrawForm({ ...withdrawForm, bankAccountName: e.target.value })}
+                    placeholder="e.g. YAI SORNYA"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 uppercase font-mono focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Bank Account / Phone Number *</label>
+                  <input
+                    type="text"
+                    required
+                    value={withdrawForm.bankAccountNumber}
+                    onChange={(e) => setWithdrawForm({ ...withdrawForm, bankAccountNumber: e.target.value })}
+                    placeholder="e.g. 015650751 or 85515650751@aclb"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              {/* Upload QR Code (KHQR) Image */}
+              <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-slate-200 flex items-center gap-1.5">
+                    <QrCode className="h-4 w-4 text-cyan-400" />
+                    រូបភាព QR Code / KHQR ទទួលប្រាក់ (Optional)
+                  </span>
+                  {withdrawForm.sellerQrImage && (
+                    <button
+                      type="button"
+                      onClick={() => setWithdrawForm(prev => ({ ...prev, sellerQrImage: '' }))}
+                      className="text-[10px] text-rose-400 hover:underline font-mono"
+                    >
+                      លុប QR
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-400 leading-relaxed font-mono">
+                  ភ្ជាប់រូប QR Code របស់អ្នក ដើម្បីឱ្យ Admin ងាយស្រួលស្កេនបាញ់លុយផ្ទាល់ពីកម្មវិធីធនាគារ (ACLEDA / ABA / Bakong)
+                </p>
+
+                <div className="flex items-center gap-3">
+                  <label className="cursor-pointer px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-mono font-bold border border-slate-700 flex items-center gap-1.5 transition-colors">
+                    <Upload className="h-3.5 w-3.5" />
+                    <span>ជ្រើសរើសរូប QR Code</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleQrUpload} 
+                    />
+                  </label>
+
+                  {withdrawForm.sellerQrImage && (
+                    <div className="flex items-center gap-2">
+                      <img 
+                        src={withdrawForm.sellerQrImage} 
+                        alt="Seller QR Preview" 
+                        className="h-10 w-10 object-contain rounded-lg border border-cyan-500/40 bg-black"
+                      />
+                      <span className="text-[11px] text-emerald-400 font-mono font-bold flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        បានភ្ជាប់រួចរាល់
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={withdrawSubmitting || shopWallet.availableBalance <= 0}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 text-black font-mono font-bold text-xs flex items-center gap-2 shadow-glow-amber transition-all hover:opacity-95 disabled:opacity-40"
+              >
+                <ArrowUpRight className="h-4 w-4" />
+                <span>{withdrawSubmitting ? 'Submitting Request...' : 'Submit Withdrawal Request'}</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Past Withdrawals History Table */}
+          <div className="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 space-y-4">
+            <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Withdrawal Requests History
+            </h3>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-900/80 text-slate-400 font-mono text-[11px] uppercase border-b border-slate-800">
+                  <tr>
+                    <th className="p-3.5">Date & Time</th>
+                    <th className="p-3.5">Amount</th>
+                    <th className="p-3.5">Bank & Account Name</th>
+                    <th className="p-3.5">Account / Phone</th>
+                    <th className="p-3.5 text-center">QR Code</th>
+                    <th className="p-3.5 text-center">Status</th>
+                    <th className="p-3.5 text-right">វិក្កយបត្រពី Admin</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-slate-200 font-mono">
+                  {withdrawals.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-6 text-center text-slate-500">
+                        No withdrawal requests submitted yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    withdrawals.map((w) => (
+                      <tr key={w.id} className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3.5 text-slate-400">{new Date(w.created_at).toLocaleString()}</td>
+                        <td className="p-3.5 font-bold text-amber-400">{Number(w.amount).toFixed(2)} Credits</td>
+                        <td className="p-3.5">
+                          <p className="text-white font-bold">{w.bank_account_name}</p>
+                          <p className="text-[10px] text-slate-400">{w.bank_name}</p>
+                        </td>
+                        <td className="p-3.5 text-slate-300">{w.bank_account_number}</td>
+                        <td className="p-3.5 text-center">
+                          {w.seller_qr_image ? (
+                            <button
+                              onClick={() => setSelectedQrModal(w.seller_qr_image)}
+                              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[10px] font-bold inline-flex items-center gap-1 border border-cyan-500/30"
+                            >
+                              <QrCode className="h-3 w-3" />
+                              <span>មើល QR</span>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-slate-500">គ្មាន QR</span>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                              w.status === 'approved'
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40'
+                                : w.status === 'rejected'
+                                ? 'bg-rose-950 text-rose-400 border border-rose-500/40'
+                                : 'bg-amber-950 text-amber-400 border border-amber-500/40 animate-pulse'
+                            }`}
+                          >
+                            {w.status}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          {w.admin_proof_url ? (
+                            <button
+                              onClick={() => setSelectedProofModal(w)}
+                              className="px-3 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 font-bold text-[11px] inline-flex items-center gap-1 shadow-sm transition-all"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>ពិនិត្យវិក្កយបត្រ</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-500">
+                              {w.status === 'pending' ? 'រង់ចាំ Admin ផ្ញើ...' : 'គ្មានវិក្កយបត្រ'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. SHOP REGISTRATION & PROFILE SETTINGS TAB */}
       {activeTab === 'settings' && (
         <div className="max-w-3xl rounded-2xl bg-[#0b1120] border border-slate-800 p-6 space-y-6">
           <div className="border-b border-slate-800 pb-4">
@@ -999,7 +1370,7 @@ export default function SellerPortalPage() {
                           <p className="text-xs font-bold text-white line-clamp-1">{it.product_name}</p>
                           <span className="text-[10px] font-mono text-cyan-400 uppercase">Brand: {it.product_brand || 'Hardware'}</span>
                           <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                            Unit Price: <span className="text-slate-200">${Number(it.price_each).toFixed(2)}</span>
+                            Unit Price: <span className="text-slate-200">{Number(it.price_each).toFixed(2)} Credits</span>
                           </div>
                         </div>
                       </div>
@@ -1008,8 +1379,8 @@ export default function SellerPortalPage() {
                         <div className="text-xs text-slate-400">
                           Qty: <strong className="text-white font-bold">{it.quantity}</strong>
                         </div>
-                        <div className="text-sm font-bold text-cyan-400 mt-0.5">
-                          ${Number(it.line_total || it.price_each * it.quantity).toFixed(2)}
+                        <div className="text-sm font-bold text-amber-400 mt-0.5">
+                          {Number(it.line_total || it.price_each * it.quantity).toFixed(2)} Credits
                         </div>
                       </div>
                     </div>
@@ -1044,11 +1415,11 @@ export default function SellerPortalPage() {
               <div className="pt-3 border-t border-slate-800 space-y-1.5 text-xs font-mono">
                 <div className="flex justify-between text-slate-400">
                   <span>Shop Items Subtotal</span>
-                  <span className="text-slate-200">${Number(selectedOrder.shop_subtotal || 0).toFixed(2)}</span>
+                  <span className="text-slate-200">{Number(selectedOrder.shop_subtotal || 0).toFixed(2)} Credits</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-white pt-1 border-t border-slate-800/60">
                   <span>Shop Net Amount</span>
-                  <span className="text-cyan-400">${Number(selectedOrder.shop_subtotal || 0).toFixed(2)}</span>
+                  <span className="text-amber-400">{Number(selectedOrder.shop_subtotal || 0).toFixed(2)} Credits</span>
                 </div>
               </div>
 
@@ -1131,8 +1502,8 @@ export default function SellerPortalPage() {
 
                       <div className="text-right">
                         <span className="text-[10px] text-slate-400 font-mono uppercase block">Order Total</span>
-                        <span className="text-base font-black font-mono text-cyan-400">
-                          ${Number(ord.shop_subtotal || 0).toFixed(2)}
+                        <span className="text-base font-black font-mono text-amber-400">
+                          {Number(ord.shop_subtotal || 0).toFixed(2)} Credits
                         </span>
                       </div>
                     </div>
@@ -1154,13 +1525,13 @@ export default function SellerPortalPage() {
                               <div>
                                 <p className="font-semibold text-white line-clamp-1">{it.product_name}</p>
                                 <span className="text-[10px] text-slate-400 font-mono">
-                                  ${Number(it.price_each).toFixed(2)} each
+                                  {Number(it.price_each).toFixed(2)} Credits each
                                 </span>
                               </div>
                             </div>
                             <div className="text-right font-mono">
                               <span className="text-slate-400 text-xs">x{it.quantity}</span>
-                              <p className="font-bold text-cyan-400 text-xs">${Number(it.line_total || it.price_each * it.quantity).toFixed(2)}</p>
+                              <p className="font-bold text-amber-400 text-xs">{Number(it.line_total || it.price_each * it.quantity).toFixed(2)} Credits</p>
                             </div>
                           </div>
                         ))}
@@ -1359,6 +1730,111 @@ export default function SellerPortalPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: INSPECT ADMIN TRANSFER SLIP */}
+      {selectedProofModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div 
+            onClick={() => setSelectedProofModal(null)}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+          />
+
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#0b1220] border border-emerald-500/40 text-white shadow-2xl z-10 overflow-hidden my-6 animate-in fade-in zoom-in-95">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                  <FileCheck2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white font-mono">
+                    វិក្កយបត្រផ្ទេរប្រាក់ពី Admin (Bank Payout Slip)
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">
+                    ចំនួនទឹកប្រាក់៖ <strong className="text-emerald-400">${Number(selectedProofModal.amount).toFixed(2)} USD ({Number(selectedProofModal.amount).toFixed(2)} Credits)</strong>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedProofModal(null)}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="rounded-2xl border border-slate-800 bg-black/60 p-2 flex items-center justify-center max-h-[420px] overflow-hidden">
+                {selectedProofModal.admin_proof_url ? (
+                  <img
+                    src={selectedProofModal.admin_proof_url}
+                    alt="Admin Transfer Slip"
+                    className="w-full h-auto max-h-[400px] object-contain rounded-xl"
+                  />
+                ) : (
+                  <div className="text-center p-8 text-slate-500 font-mono text-xs">
+                    មិនមានរូបភាពវិក្កយបត្រភ្ជាប់មកជាមួយទេ។
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono space-y-2">
+                <div className="flex justify-between text-slate-400">
+                  <span>ធនាគារផ្ទេរទៅ៖</span>
+                  <strong className="text-white">{selectedProofModal.bank_name}</strong>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>ឈ្មោះគណនី៖</span>
+                  <span className="text-cyan-300 font-bold">{selectedProofModal.bank_account_name}</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>លេខគណនី៖</span>
+                  <span className="text-white">{selectedProofModal.bank_account_number}</span>
+                </div>
+                {selectedProofModal.admin_notes && (
+                  <div className="pt-2 border-t border-slate-800 text-slate-300">
+                    <span className="text-slate-400 block text-[11px] mb-0.5">សម្គាល់ពី Admin៖</span>
+                    <p className="p-2 rounded bg-slate-950 border border-slate-800 text-amber-300 text-[11px]">
+                      {selectedProofModal.admin_notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setSelectedProofModal(null)}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-mono font-bold text-xs"
+              >
+                បិទផ្ទាំង (Close)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PREVIEW SELLER QR CODE */}
+      {selectedQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            onClick={() => setSelectedQrModal(null)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+          />
+          <div className="relative w-full max-w-sm rounded-3xl bg-[#0b1220] border border-cyan-500/40 text-white shadow-2xl z-10 p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <h3 className="text-sm font-bold font-mono text-cyan-300 flex items-center gap-1.5">
+                <QrCode className="h-4 w-4" />
+                <span>QR Code ទទួលប្រាក់របស់អ្នកលក់</span>
+              </h3>
+              <button onClick={() => setSelectedQrModal(null)} className="p-1 rounded bg-slate-800">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="bg-white p-3 rounded-2xl flex items-center justify-center">
+              <img src={selectedQrModal} alt="Seller QR Code" className="max-h-[300px] object-contain" />
+            </div>
           </div>
         </div>
       )}

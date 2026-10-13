@@ -89,7 +89,7 @@ router.get('/financials', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/shops - Moderation queue of shops
+// GET /api/admin/shops - Moderation queue of shops with wallet balances
 router.get('/shops', async (req, res, next) => {
   try {
     const shops = await query(
@@ -98,10 +98,14 @@ router.get('/shops', async (req, res, next) => {
         u.name as owner_name,
         u.email as owner_email,
         u.phone as owner_phone,
-        COUNT(p.id) as total_products
+        COUNT(p.id) as total_products,
+        COALESCE(w.available_balance, 0.00) as available_balance,
+        COALESCE(w.pending_balance, 0.00) as pending_balance,
+        COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE shop_id = s.id AND status = 'approved'), 0.00) as total_withdrawn
        FROM shops s
        JOIN users u ON s.seller_id = u.id
        LEFT JOIN products p ON s.id = p.shop_id
+       LEFT JOIN shop_wallets w ON s.id = w.shop_id
        GROUP BY s.id
        ORDER BY s.is_approved ASC, s.id DESC`
     );

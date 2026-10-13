@@ -144,7 +144,69 @@ export const initDb = async () => {
           )
         `);
 
-        // 7. Site Analytics Table
+        // 7. User Wallets Table (Credits balance)
+        db.run(`
+          CREATE TABLE IF NOT EXISTS user_wallets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            balance REAL NOT NULL DEFAULT 0.00,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          )
+        `);
+
+        // 8. Shop Wallets Table (Seller earnings & withdrawals)
+        db.run(`
+          CREATE TABLE IF NOT EXISTS shop_wallets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            shop_id INTEGER NOT NULL UNIQUE,
+            available_balance REAL NOT NULL DEFAULT 0.00,
+            pending_balance REAL NOT NULL DEFAULT 0.00,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+          )
+        `);
+
+        // 9. Top-Up Transactions (ACLEDA KHQR YAI SORNYA)
+        db.run(`
+          CREATE TABLE IF NOT EXISTS topup_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            credits_issued REAL NOT NULL,
+            recipient_account TEXT DEFAULT '85515650751@aclb',
+            merchant_name TEXT DEFAULT 'YAI SORNYA',
+            slip_image_url TEXT,
+            qr_string TEXT,
+            md5_hash TEXT,
+            status TEXT DEFAULT 'pending',
+            reviewed_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (reviewed_by) REFERENCES users(id)
+          )
+        `);
+
+        // 10. Withdrawal Requests (Sellers withdrawing credits to ACLEDA/Bank)
+        db.run(`
+          CREATE TABLE IF NOT EXISTS withdrawal_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            shop_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            bank_name TEXT NOT NULL,
+            bank_account_name TEXT NOT NULL,
+            bank_account_number TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            admin_proof_url TEXT,
+            admin_notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+          )
+        `);
+
+        // 11. Site Analytics Table
         db.run(`
           CREATE TABLE IF NOT EXISTS site_analytics (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,6 +216,56 @@ export const initDb = async () => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `);
+
+        // Apply automatic column migrations for existing tables
+        const migrateColumns = async () => {
+          try {
+            const topupCols = await query('PRAGMA table_info(topup_transactions)');
+            const topupColNames = topupCols.map(c => c.name);
+
+            if (!topupColNames.includes('merchant_name')) {
+              await execute("ALTER TABLE topup_transactions ADD COLUMN merchant_name TEXT DEFAULT 'YAI SORNYA'");
+            }
+            if (!topupColNames.includes('bank_name')) {
+              await execute("ALTER TABLE topup_transactions ADD COLUMN bank_name TEXT DEFAULT 'ACLEDA Bank'");
+            }
+            if (!topupColNames.includes('transaction_ref')) {
+              await execute("ALTER TABLE topup_transactions ADD COLUMN transaction_ref TEXT");
+            }
+            if (!topupColNames.includes('sender_name')) {
+              await execute("ALTER TABLE topup_transactions ADD COLUMN sender_name TEXT");
+            }
+            if (!topupColNames.includes('slip_details')) {
+              await execute("ALTER TABLE topup_transactions ADD COLUMN slip_details TEXT");
+            }
+            if (!topupColNames.includes('qr_string')) {
+              await execute("ALTER TABLE topup_transactions ADD COLUMN qr_string TEXT");
+            }
+            if (!topupColNames.includes('md5_hash')) {
+              await execute("ALTER TABLE topup_transactions ADD COLUMN md5_hash TEXT");
+            }
+            if (!topupColNames.includes('updated_at')) {
+              await execute("ALTER TABLE topup_transactions ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+            }
+
+            const wrCols = await query('PRAGMA table_info(withdrawal_requests)');
+            const wrColNames = wrCols.map(c => c.name);
+
+            if (!wrColNames.includes('admin_notes')) {
+              await execute("ALTER TABLE withdrawal_requests ADD COLUMN admin_notes TEXT");
+            }
+            if (!wrColNames.includes('seller_qr_image')) {
+              await execute("ALTER TABLE withdrawal_requests ADD COLUMN seller_qr_image TEXT");
+            }
+            if (!wrColNames.includes('updated_at')) {
+              await execute("ALTER TABLE withdrawal_requests ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+            }
+          } catch (mErr) {
+            console.warn('Migration warning:', mErr.message);
+          }
+        };
+
+        await migrateColumns();
 
         // Seed ONLY Essential Hardware Categories (Zero mock products, zero mock orders, zero mock shops)
         db.get("SELECT COUNT(*) as count FROM categories", async (err, row) => {

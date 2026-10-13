@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import AuthModal from './components/AuthModal';
+import TopUpModal from './components/TopUpModal';
 
 import HomePage from './pages/HomePage';
 import CatalogPage from './pages/CatalogPage';
@@ -20,6 +21,7 @@ export default function App() {
       <Navbar />
       <CartDrawer />
       <AuthModal />
+      <TopUpModal />
 
       <main className="flex-1">
         <Routes>

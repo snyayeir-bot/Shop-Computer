@@ -102,8 +102,8 @@ export default function HomePage() {
               <p className="text-xs text-slate-400 mt-0.5">Authentic Hardware</p>
             </div>
             <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-              <span className="text-2xl font-black font-mono text-indigo-400">KHQR</span>
-              <p className="text-xs text-slate-400 mt-0.5">Instant Bakong Pay</p>
+              <span className="text-2xl font-black font-mono text-amber-400">CREDITS</span>
+              <p className="text-xs text-slate-400 mt-0.5">Wallet & Slip Top-Up</p>
             </div>
             <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
               <span className="text-2xl font-black font-mono text-emerald-400">&lt; 24h</span>

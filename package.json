@@ -6,7 +6,9 @@
     "server": "cd server && npm start",
     "server:dev": "cd server && npm run dev",
     "client": "cd client && npm run dev",
-    "start": "concurrently \"npm run server\" \"npm run client\""
+    "playemt": "cd playemt && python server.py",
+    "slip": "cd playemt && python server.py",
+    "start": "concurrently \"npm run server\" \"npm run client\" \"npm run playemt\""
   },
   "devDependencies": {
     "concurrently": "^9.2.4"

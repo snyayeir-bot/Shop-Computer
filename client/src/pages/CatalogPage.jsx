@@ -209,8 +209,8 @@ export default function CatalogPage() {
             {/* Price Range Slider */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-medium text-slate-300">Max Price</label>
-                <span className="text-xs font-mono font-bold text-cyan-400">${currentMaxPrice}</span>
+                <label className="text-xs font-medium text-slate-300">Max Credits</label>
+                <span className="text-xs font-mono font-bold text-amber-400">{currentMaxPrice} Credits</span>
               </div>
               <input
                 type="range"
@@ -219,11 +219,11 @@ export default function CatalogPage() {
                 step="50"
                 value={currentMaxPrice}
                 onChange={(e) => updateFilter('maxPrice', e.target.value)}
-                className="w-full accent-cyan-400 bg-slate-800 h-2 rounded-lg cursor-pointer"
+                className="w-full accent-amber-400 bg-slate-800 h-2 rounded-lg cursor-pointer"
               />
               <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
-                <span>$50</span>
-                <span>$3,500</span>
+                <span>50 Credits</span>
+                <span>3,500 Credits</span>
               </div>
             </div>
 

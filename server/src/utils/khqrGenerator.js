@@ -1,20 +1,21 @@
-import { BakongKHQR, IndividualInfo } from 'bakong-khqr';
+import { BakongKHQR, khqrData, IndividualInfo } from 'bakong-khqr';
+import crypto from 'crypto';
 
 /**
  * បង្កើត KHQR Payload សម្រាប់គណនី ACLEDA Mobile (លេខទូរស័ព្ទ: 015650751)
  * @param {Object} params
  * @param {number|string} params.amount - ចំនួនទឹកប្រាក់
  * @param {'USD' | 'KHR'} [params.currency='USD'] - រូបិយប័ណ្ណ
- * @param {string} [params.merchantName='CYBERTECH COMPUTER'] - ឈ្មោះម្ចាស់គណនី
- * @param {string} [params.orderNumber='ORD-CYBER'] - លេខសម្គាល់ Order
+ * @param {string} [params.merchantName='YAI SORNYA'] - ឈ្មោះម្ចាស់គណនី
+ * @param {string} [params.orderNumber='TOPUP-CYBER'] - លេខសម្គាល់ Order
  * @param {string} [params.phone='015650751'] - លេខទូរស័ព្ទគណនី ACLEDA
  * @returns {{ qrString: string, md5: string, account: string }}
  */
 export function generateAcledaKHQR({
   amount,
   currency = 'USD',
-  merchantName = process.env.BAKONG_MERCHANT_NAME || 'CYBERTECH COMPUTER',
-  orderNumber = 'ORD-CYBER',
+  merchantName = process.env.BAKONG_MERCHANT_NAME || 'YAI SORNYA',
+  orderNumber = 'TOPUP-CYBER',
   phone = process.env.BAKONG_PHONE || '015650751'
 }) {
   try {
@@ -30,23 +31,27 @@ export function generateAcledaKHQR({
     const numAmount = parseFloat(amount);
 
     // កំណត់រូបិយប័ណ្ណ Bakong Currency Code (USD: 840, KHR: 116)
-    const khqrCurrency =
+    const selectedCurrency =
       currency === 'KHR'
-        ? BakongKHQR.khqrData.currency.khr
-        : BakongKHQR.khqrData.currency.usd;
+        ? (khqrData?.currency?.khr || '116')
+        : (khqrData?.currency?.usd || '840');
+
+    // Dynamic KHQR requires expiration timestamp (30 mins from now)
+    const expirationTimestamp = Date.now() + 30 * 60 * 1000;
 
     const optionalData = {
-      currency: khqrCurrency,
+      currency: selectedCurrency,
       amount: numAmount,
       mobileNumber: cleanPhone,
-      storeLabel: (merchantName || 'CYBERTECH COMPUTER').slice(0, 25),
+      storeLabel: (merchantName || 'YAI SORNYA').slice(0, 25),
       terminalLabel: 'Online-Web',
-      billNumber: (orderNumber || 'ORD-001').slice(0, 25)
+      billNumber: (orderNumber || 'TOPUP-001').slice(0, 25),
+      expirationTimestamp
     };
 
     const individualInfo = new IndividualInfo(
       acledaBakongId,
-      (merchantName || 'CYBERTECH COMPUTER').trim().toUpperCase().slice(0, 25),
+      (merchantName || 'YAI SORNYA').trim().toUpperCase().slice(0, 25),
       process.env.BAKONG_CITY || 'Phnom Penh',
       optionalData
     );
@@ -57,7 +62,7 @@ export function generateAcledaKHQR({
     if (response && response.data && response.data.qr) {
       return {
         qrString: response.data.qr,
-        md5: response.data.md5,
+        md5: response.data.md5 || crypto.createHash('md5').update(response.data.qr).digest('hex'),
         account: acledaBakongId
       };
     }
