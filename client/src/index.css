@@ -5,7 +5,7 @@
 @layer base {
   body {
     @apply bg-[#070b19] text-slate-100 min-h-screen overflow-x-hidden;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Outfit', 'Kantumruy Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
 
   code, pre {

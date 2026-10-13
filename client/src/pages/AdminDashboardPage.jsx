@@ -35,9 +35,11 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function AdminDashboardPage() {
   const { user, switchDemoUser } = useAuth();
+  const { lang, t } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'topups' | 'withdrawals'
   const [analytics, setAnalytics] = useState(null);
   const [financials, setFinancials] = useState(null);
@@ -227,7 +229,7 @@ export default function AdminDashboardPage() {
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Overview & Moderation
+            {t('admin.tabOverview')}
           </button>
           <button
             onClick={() => setActiveTab('topups')}
@@ -238,7 +240,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <Coins className="h-3.5 w-3.5 text-amber-400" />
-            <span>Top-Ups</span>
+            <span>{t('admin.tabTopups')}</span>
             {pendingTopupsCount > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-black font-extrabold animate-pulse">
                 {pendingTopupsCount}
@@ -254,7 +256,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <ArrowUpRight className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Withdrawals</span>
+            <span>{t('admin.tabWithdrawals')}</span>
             {pendingWithdrawalsCount > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-500 text-black font-extrabold animate-pulse">
                 {pendingWithdrawalsCount}
@@ -272,40 +274,40 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-mono uppercase tracking-wider">Total Users</span>
+                <span className="text-xs font-mono uppercase tracking-wider">{t('admin.totalUsers')}</span>
                 <Users className="h-4 w-4 text-cyan-400" />
               </div>
               <p className="text-2xl font-black font-mono text-white">{stats.totalUsers}</p>
               <span className="text-[11px] text-slate-500 font-mono">
-                {stats.totalBuyers} Buyers • {stats.totalSellers} Sellers
+                {stats.totalBuyers} {t('admin.buyers')} • {stats.totalSellers} {t('admin.sellers')}
               </span>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-mono uppercase tracking-wider">Hardware Products</span>
+                <span className="text-xs font-mono uppercase tracking-wider">{t('admin.hardwareProducts')}</span>
                 <Layers className="h-4 w-4 text-indigo-400" />
               </div>
               <p className="text-2xl font-black font-mono text-indigo-400">{stats.totalProducts}</p>
-              <span className="text-[11px] text-slate-500 font-mono">Across approved stores</span>
+              <span className="text-[11px] text-slate-500 font-mono">{t('admin.acrossApproved')}</span>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-mono uppercase tracking-wider">Total Platform Orders</span>
+                <span className="text-xs font-mono uppercase tracking-wider">{t('admin.totalOrders')}</span>
                 <ShoppingBag className="h-4 w-4 text-emerald-400" />
               </div>
               <p className="text-2xl font-black font-mono text-emerald-400">{stats.totalOrders}</p>
-              <span className="text-[11px] text-slate-500 font-mono">{fin.paidOrdersCount} Paid Orders</span>
+              <span className="text-[11px] text-slate-500 font-mono">{fin.paidOrdersCount} {t('admin.paidOrders')}</span>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-mono uppercase tracking-wider">Live Daily Visitors</span>
+                <span className="text-xs font-mono uppercase tracking-wider">{t('admin.dailyVisitors')}</span>
                 <Activity className="h-4 w-4 text-rose-400" />
               </div>
               <p className="text-2xl font-black font-mono text-rose-400">{stats.dailyActiveUsers}</p>
-              <span className="text-[11px] text-slate-500 font-mono">{stats.dailyPageViews} Page Views Today</span>
+              <span className="text-[11px] text-slate-500 font-mono">{stats.dailyPageViews} {t('admin.pageViewsToday')}</span>
             </div>
           </div>
 
@@ -315,45 +317,45 @@ export default function AdminDashboardPage() {
               <div>
                 <h2 className="text-lg font-bold text-white font-mono flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-emerald-400" />
-                  Financial Accounting & Platform Revenue
+                  {t('admin.financialTitle')}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Live calculations of Gross Merchandise Value (GMV), 5% commission, and hosting expenses
+                  {t('admin.financialSubtitle')}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <span className="text-[11px] font-mono text-slate-400 uppercase">Total Marketplace Volume</span>
+                <span className="text-[11px] font-mono text-slate-400 uppercase">{t('admin.totalMarketplaceVolume')}</span>
                 <p className="text-2xl font-black font-mono text-cyan-400">
                   {Number(fin.totalMarketplaceGMV).toFixed(2)} Credits
                 </p>
-                <span className="text-[10px] text-slate-500">{fin.paidOrdersCount} Paid Orders</span>
+                <span className="text-[10px] text-slate-500">{fin.paidOrdersCount} {t('admin.paidOrders')}</span>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <span className="text-[11px] font-mono text-slate-400 uppercase">Platform Commission (5%)</span>
+                <span className="text-[11px] font-mono text-slate-400 uppercase">{t('admin.platformCommission')}</span>
                 <p className="text-2xl font-black font-mono text-indigo-400">
                   {Number(fin.platformCommission).toFixed(2)} Credits
                 </p>
-                <span className="text-[10px] text-slate-500">Gross Platform Revenue</span>
+                <span className="text-[10px] text-slate-500">{t('admin.grossRevenue')}</span>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <span className="text-[11px] font-mono text-slate-400 uppercase">Server & CDN Expenses</span>
+                <span className="text-[11px] font-mono text-slate-400 uppercase">{t('admin.serverExpenses')}</span>
                 <p className="text-2xl font-black font-mono text-rose-400">
                   -{Number(fin.serverExpenses).toFixed(2)} Credits
                 </p>
-                <span className="text-[10px] text-slate-500">Cloud infra & edge hosting</span>
+                <span className="text-[10px] text-slate-500">{t('admin.cloudInfra')}</span>
               </div>
 
               <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/30 space-y-1">
-                <span className="text-[11px] font-mono text-emerald-300 uppercase font-bold">Net Platform Profit</span>
+                <span className="text-[11px] font-mono text-emerald-300 uppercase font-bold">{t('admin.netProfit')}</span>
                 <p className="text-2xl font-black font-mono text-emerald-400">
                   {Number(fin.netProfit).toFixed(2)} Credits
                 </p>
-                <span className="text-[10px] text-emerald-300/80 font-mono">After operational costs</span>
+                <span className="text-[10px] text-emerald-300/80 font-mono">{t('admin.afterCosts')}</span>
               </div>
             </div>
           </div>
@@ -364,14 +366,14 @@ export default function AdminDashboardPage() {
               <div>
                 <h2 className="text-lg font-bold text-white font-mono flex items-center gap-2">
                   <Store className="h-5 w-5 text-indigo-400" />
-                  Vendor Store Moderation Queue
+                  {t('admin.vendorModerationTitle')}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Review new store applications and toggle Approve / Reject status
+                  {t('admin.vendorModerationSubtitle')}
                 </p>
               </div>
               <span className="text-xs font-mono text-slate-400">
-                {shops.length} Vendor Stores Registered
+                {shops.length} {t('admin.storesRegistered')}
               </span>
             </div>
 
@@ -379,12 +381,12 @@ export default function AdminDashboardPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-900/80 text-slate-400 font-mono text-[11px] uppercase border-b border-slate-800">
                   <tr>
-                    <th className="p-3.5">Store / Shop Name</th>
-                    <th className="p-3.5">Owner Details</th>
-                    <th className="p-3.5 text-center">Items Listed</th>
-                    <th className="p-3.5 text-center">Shop Balance (សមតុល្យ)</th>
-                    <th className="p-3.5 text-center">Current Status</th>
-                    <th className="p-3.5 text-right">Moderation Actions</th>
+                    <th className="p-3.5">{t('admin.storeName')}</th>
+                    <th className="p-3.5">{t('admin.ownerDetails')}</th>
+                    <th className="p-3.5 text-center">{t('admin.itemsListed')}</th>
+                    <th className="p-3.5 text-center">{t('admin.shopBalance')}</th>
+                    <th className="p-3.5 text-center">{t('admin.currentStatus')}</th>
+                    <th className="p-3.5 text-right">{t('admin.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-slate-200">
@@ -426,12 +428,12 @@ export default function AdminDashboardPage() {
                         {shop.is_approved ? (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3" />
-                            Approved
+                            {t('admin.approved')}
                           </span>
                         ) : (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-amber-950 text-amber-300 border border-amber-500/40 inline-flex items-center gap-1 animate-pulse">
                             <XCircle className="h-3 w-3" />
-                            Pending Review
+                            {t('admin.pending')}
                           </span>
                         )}
                       </td>
@@ -444,7 +446,7 @@ export default function AdminDashboardPage() {
                               disabled={actionLoading === `shop_${shop.id}`}
                               className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-black font-mono font-bold text-[11px] shadow-sm transition-all"
                             >
-                              Approve Store
+                              {lang === 'kh' ? 'អនុម័តហាង' : 'Approve Store'}
                             </button>
                           ) : (
                             <button
@@ -452,7 +454,7 @@ export default function AdminDashboardPage() {
                               disabled={actionLoading === `shop_${shop.id}`}
                               className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 hover:text-rose-400 text-slate-400 font-mono text-[11px] border border-slate-700 transition-colors"
                             >
-                              Suspend / Reject
+                              {lang === 'kh' ? 'ផ្អាក / បដិសេធ' : 'Suspend / Reject'}
                             </button>
                           )}
                         </div>

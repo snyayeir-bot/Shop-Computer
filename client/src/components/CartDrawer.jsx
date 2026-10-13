@@ -3,8 +3,10 @@ import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Store, ShieldCheck } f
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function CartDrawer() {
+  const { lang, t } = useLanguage();
   const {
     isDrawerOpen,
     setIsDrawerOpen,
@@ -50,9 +52,9 @@ export default function CartDrawer() {
                 <ShoppingBag className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Your Tech Cart</h3>
+                <h3 className="text-base font-bold text-white">{t('cart.title')}</h3>
                 <p className="text-xs text-slate-400">
-                  {items.length} {items.length === 1 ? 'item' : 'items'} ready for order
+                  {items.length} {t('cart.items')}
                 </p>
               </div>
             </div>
@@ -71,9 +73,9 @@ export default function CartDrawer() {
                 <div className="h-16 w-16 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-500">
                   <ShoppingBag className="h-8 w-8" />
                 </div>
-                <h4 className="text-lg font-semibold text-slate-300">Cart is empty</h4>
+                <h4 className="text-lg font-semibold text-slate-300">{t('cart.emptyTitle')}</h4>
                 <p className="text-xs text-slate-500 max-w-xs">
-                  Explore our high-performance hardware catalog and add GPUs, CPUs, or Laptops to your cart.
+                  {t('cart.emptyDesc')}
                 </p>
                 <button
                   onClick={() => {
@@ -82,7 +84,7 @@ export default function CartDrawer() {
                   }}
                   className="mt-2 px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-500 text-black hover:bg-cyan-400 transition-all font-mono"
                 >
-                  Explore Catalog
+                  {t('cart.startShopping')}
                 </button>
               </div>
             ) : (
@@ -161,19 +163,19 @@ export default function CartDrawer() {
             <div className="p-4 border-t border-slate-800 bg-slate-900/90 space-y-3">
               <div className="space-y-1.5 text-xs text-slate-400 font-mono">
                 <div className="flex justify-between">
-                  <span>Subtotal:</span>
+                  <span>{t('cart.subtotal')}:</span>
                   <span className="font-bold text-slate-200">{subtotal.toFixed(2)} Credits</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>VAT (10%):</span>
+                  <span>{t('cart.vatTax')}:</span>
                   <span className="font-bold text-slate-200">{taxAmount.toFixed(2)} Credits</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shipping Fee:</span>
+                  <span>{t('cart.shipping')}:</span>
                   <span className="font-bold text-slate-200">{shippingFee.toFixed(2)} Credits</span>
                 </div>
                 <div className="pt-2 border-t border-slate-800 flex justify-between text-sm font-bold text-white">
-                  <span>Grand Total:</span>
+                  <span>{t('cart.grandTotal')}:</span>
                   <span className="font-black text-amber-400 text-base">{grandTotal.toFixed(2)} Credits</span>
                 </div>
               </div>
@@ -182,13 +184,13 @@ export default function CartDrawer() {
                 onClick={handleProceedToCheckout}
                 className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-black font-black text-sm flex items-center justify-center gap-2 hover:opacity-95 transition-all shadow-glow-amber font-mono uppercase tracking-wider"
               >
-                <span>ទូទាត់ប្រាក់ (Checkout with Credits)</span>
+                <span>{t('cart.proceedCheckout')}</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
 
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-mono">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                <span>ទូទាត់ប្រាក់ដោយប្រើ Wallet Credits</span>
+                <span>{lang === 'kh' ? 'ទូទាត់ប្រាក់ដោយប្រើ Wallet Credits' : 'Checkout securely with Wallet Credits'}</span>
               </div>
             </div>
           )}

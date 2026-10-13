@@ -13,16 +13,19 @@ import {
   Search,
   LogIn,
   UserPlus,
-  Coins
+  Coins,
+  Globe
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWallet } from '../context/WalletContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Navbar() {
   const { user, logout, openAuthModal } = useAuth();
   const { totalCount, setIsDrawerOpen } = useCart();
   const { balance, setIsTopUpOpen } = useWallet();
+  const { lang, setLang, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -33,14 +36,13 @@ export default function Navbar() {
     if (navSearch.trim()) {
       navigate(`/products?search=${encodeURIComponent(navSearch.trim())}`);
     }
-    console.log(totalCount);
   };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-[#070c18]/90 backdrop-blur-xl">
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+        <div className="flex items-center justify-between h-16 gap-3 sm:gap-4">
 
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
@@ -54,7 +56,7 @@ export default function Navbar() {
                 CYBER<span className="text-cyan-400">TECH</span>
               </span>
               <span className="block text-[10px] text-slate-400 uppercase tracking-widest font-mono">
-                Hardware & Laptops
+                {t('nav.brandSub')}
               </span>
             </div>
           </Link>
@@ -64,7 +66,7 @@ export default function Navbar() {
             <div className="relative w-full">
               <input
                 type="text"
-                placeholder="Search RTX 4090, Ryzen 7800X3D, DDR5, ROG Laptop..."
+                placeholder={t('nav.searchPlaceholder')}
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
                 className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all font-sans"
@@ -82,7 +84,7 @@ export default function Navbar() {
                   : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`}
             >
-              Hardware Catalog
+              {t('nav.catalog')}
             </Link>
 
             {user?.role === 'seller' && (
@@ -94,7 +96,7 @@ export default function Navbar() {
                   }`}
               >
                 <Store className="h-4 w-4 text-indigo-400" />
-                Seller Portal
+                {t('nav.sellerPortal')}
               </Link>
             )}
 
@@ -107,7 +109,7 @@ export default function Navbar() {
                   }`}
               >
                 <ShieldAlert className="h-4 w-4 text-rose-400" />
-                Admin Panel
+                {t('nav.adminPanel')}
               </Link>
             )}
 
@@ -120,25 +122,57 @@ export default function Navbar() {
                   }`}
               >
                 <User className="h-4 w-4" />
-                Dashboard
+                {t('nav.dashboard')}
               </Link>
             )}
           </nav>
 
-          {/* Actions: Wallet Credits, Cart & Profile Auth */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Actions: Language Switcher, Wallet Credits, Cart & Profile Auth */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+
+            {/* 🌐 Language Switcher Button (KH | EN) */}
+            <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-xl p-0.5 text-xs font-mono font-bold shadow-sm">
+              <button
+                type="button"
+                onClick={() => setLang('kh')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+                  lang === 'kh'
+                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-black font-extrabold shadow-glow-cyan'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                }`}
+                title="ប្តូរទៅភាសាខ្មែរ (Khmer)"
+              >
+                <span className="text-xs">🇰🇭</span>
+                <span>KH</span>
+              </button>
+              <span className="text-slate-600 px-0.5 text-xs select-none">|</span>
+              <button
+                type="button"
+                onClick={() => setLang('en')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+                  lang === 'en'
+                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-black font-extrabold shadow-glow-cyan'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                }`}
+                title="Switch to English"
+              >
+                <span className="text-xs">🇺🇸</span>
+                <span>EN</span>
+              </button>
+            </div>
+
             {/* Wallet Credits Badge & Top-Up trigger */}
             {user && (
               <button
                 onClick={() => setIsTopUpOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition-all font-mono shadow-sm group"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition-all font-mono shadow-sm group"
                 title="Top-Up Wallet Credits via ACLEDA KHQR"
               >
                 <Coins className="h-4 w-4 text-amber-400 group-hover:rotate-12 transition-transform" />
                 <span className="text-xs font-black">{balance.toFixed(2)}</span>
-                <span className="text-[10px] uppercase font-bold text-amber-400/80 hidden sm:inline">Credits</span>
+                <span className="text-[10px] uppercase font-bold text-amber-400/80 hidden sm:inline">{t('nav.credits')}</span>
                 <span className="ml-1 text-[10px] bg-amber-500 text-black font-extrabold px-1.5 py-0.2 rounded-md">
-                  + Top-Up
+                  {t('nav.topUp')}
                 </span>
               </button>
             )}
@@ -147,7 +181,8 @@ export default function Navbar() {
             <button
               onClick={() => setIsDrawerOpen(true)}
               className="relative p-2.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-cyan-500 text-slate-200 hover:text-cyan-400 transition-all shadow-sm"
-              aria-label="View Cart"
+              aria-label={t('nav.viewCart')}
+              title={t('nav.viewCart')}
             >
               <ShoppingCart className="h-5 w-5" />
               {totalCount > 0 && (
@@ -176,7 +211,7 @@ export default function Navbar() {
                 </Link>
                 <button
                   onClick={logout}
-                  title="Log out"
+                  title={t('nav.logout')}
                   className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800/50 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
@@ -186,18 +221,19 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => openAuthModal('login')}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/80 transition-all font-mono flex items-center gap-1.5"
+                  className="px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/80 transition-all font-mono flex items-center gap-1.5"
                 >
                   <LogIn className="h-3.5 w-3.5" />
-                  <span>Sign In</span>
+                  <span>{t('nav.signIn')}</span>
                 </button>
 
                 <button
                   onClick={() => openAuthModal('register')}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 text-black hover:opacity-90 transition-all shadow-glow-cyan font-mono flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 text-black hover:opacity-90 transition-all shadow-glow-cyan font-mono flex items-center gap-1.5"
                 >
                   <UserPlus className="h-3.5 w-3.5" />
-                  <span>Register Account</span>
+                  <span className="hidden sm:inline">{t('nav.register')}</span>
+                  <span className="sm:hidden">Register</span>
                 </button>
               </div>
             )}
@@ -215,11 +251,43 @@ export default function Navbar() {
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-800 py-4 space-y-2">
+          <div className="lg:hidden border-t border-slate-800 py-4 space-y-3">
+            {/* Mobile Language Switcher */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+              <span className="text-xs text-slate-400 font-mono flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5 text-cyan-400" />
+                Language / ភាសា:
+              </span>
+              <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-0.5 text-xs font-mono font-bold">
+                <button
+                  type="button"
+                  onClick={() => setLang('kh')}
+                  className={`px-3 py-1 rounded-md transition-all ${
+                    lang === 'kh'
+                      ? 'bg-cyan-500 text-black font-extrabold shadow-glow-cyan'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  🇰🇭 KH
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLang('en')}
+                  className={`px-3 py-1 rounded-md transition-all ${
+                    lang === 'en'
+                      ? 'bg-cyan-500 text-black font-extrabold shadow-glow-cyan'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  🇺🇸 EN
+                </button>
+              </div>
+            </div>
+
             <form onSubmit={handleSearchSubmit} className="mb-3">
               <input
                 type="text"
-                placeholder="Search computer hardware..."
+                placeholder={t('nav.searchPlaceholder')}
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-200"
@@ -230,7 +298,7 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded text-slate-300 hover:bg-slate-800"
             >
-              Catalog & Search
+              {t('nav.catalog')}
             </Link>
 
             {user?.role === 'seller' && (
@@ -239,7 +307,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-3 py-2 rounded text-indigo-300 hover:bg-slate-800"
               >
-                Seller Portal
+                {t('nav.sellerPortal')}
               </Link>
             )}
 
@@ -249,7 +317,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-3 py-2 rounded text-rose-300 hover:bg-slate-800"
               >
-                Super Admin Panel
+                {t('nav.adminPanel')}
               </Link>
             )}
 
@@ -259,13 +327,13 @@ export default function Navbar() {
                   onClick={() => { setMobileMenuOpen(false); openAuthModal('login'); }}
                   className="flex-1 py-2 rounded-lg bg-slate-800 text-xs font-mono text-center text-slate-200 font-bold"
                 >
-                  Sign In
+                  {t('nav.signIn')}
                 </button>
                 <button
                   onClick={() => { setMobileMenuOpen(false); openAuthModal('register'); }}
                   className="flex-1 py-2 rounded-lg bg-cyan-500 text-black text-xs font-mono text-center font-bold"
                 >
-                  Register Account
+                  {t('nav.register')}
                 </button>
               </div>
             )}

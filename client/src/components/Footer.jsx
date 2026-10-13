@@ -1,8 +1,11 @@
 import React from 'react';
 import { Cpu, ShieldCheck, Truck, Clock, Award, Terminal } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
+  const { lang, t } = useLanguage();
+
   return (
     <footer className="border-t border-slate-800 bg-[#060a14] pt-12 pb-8 mt-20 text-slate-400 text-sm">
       {/* Feature highlights bar */}
@@ -13,8 +16,8 @@ export default function Footer() {
               <ShieldCheck className="h-6 w-6" />
             </div>
             <div>
-              <h4 className="text-white font-semibold text-sm">100% Genuine Hardware</h4>
-              <p className="text-xs text-slate-400">Official distributor warranties</p>
+              <h4 className="text-white font-semibold text-sm">{t('footer.genuineTitle')}</h4>
+              <p className="text-xs text-slate-400">{t('footer.genuineDesc')}</p>
             </div>
           </div>
 
@@ -23,8 +26,8 @@ export default function Footer() {
               <Truck className="h-6 w-6" />
             </div>
             <div>
-              <h4 className="text-white font-semibold text-sm">Fast Nationwide Delivery</h4>
-              <p className="text-xs text-slate-400">24-48h arrival across Cambodia</p>
+              <h4 className="text-white font-semibold text-sm">{t('footer.deliveryTitle')}</h4>
+              <p className="text-xs text-slate-400">{t('footer.deliveryDesc')}</p>
             </div>
           </div>
 
@@ -33,8 +36,8 @@ export default function Footer() {
               <Clock className="h-6 w-6" />
             </div>
             <div>
-              <h4 className="text-white font-semibold text-sm">Instant KHQR & Card</h4>
-              <p className="text-xs text-slate-400">Bakong KHQR seamless checkout</p>
+              <h4 className="text-white font-semibold text-sm">{t('footer.khqrTitle')}</h4>
+              <p className="text-xs text-slate-400">{t('footer.khqrDesc')}</p>
             </div>
           </div>
 
@@ -43,8 +46,8 @@ export default function Footer() {
               <Award className="h-6 w-6" />
             </div>
             <div>
-              <h4 className="text-white font-semibold text-sm">Multi-Vendor Verified</h4>
-              <p className="text-xs text-slate-400">Strict store moderation queue</p>
+              <h4 className="text-white font-semibold text-sm">{t('footer.multiVendorTitle')}</h4>
+              <p className="text-xs text-slate-400">{t('footer.multiVendorDesc')}</p>
             </div>
           </div>
         </div>
@@ -61,49 +64,49 @@ export default function Footer() {
             </span>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Leading multi-vendor computer parts, PC builder hardware, and high-performance gaming laptops marketplace in Cambodia.
+            {t('footer.brandDesc')}
           </p>
           <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
             <Terminal className="h-3.5 w-3.5" />
-            <span>Built with Node.js & React</span>
+            <span>{t('footer.techStack')}</span>
           </div>
         </div>
 
         <div>
           <h4 className="text-white font-semibold text-xs tracking-wider uppercase font-mono mb-4 text-cyan-400">
-            Hardware Categories
+            {t('footer.categoriesTitle')}
           </h4>
           <ul className="space-y-2 text-xs">
-            <li><Link to="/products?category=gpu" className="hover:text-cyan-400 transition-colors">Graphics Cards (RTX 4090 / RX 7900)</Link></li>
-            <li><Link to="/products?category=cpu" className="hover:text-cyan-400 transition-colors">Processors (Ryzen 7000 / Intel 14th)</Link></li>
-            <li><Link to="/products?category=laptop" className="hover:text-cyan-400 transition-colors">Gaming Laptops & OLED Ultrabooks</Link></li>
-            <li><Link to="/products?category=ram" className="hover:text-cyan-400 transition-colors">DDR5 & DDR4 Overclock Memory</Link></li>
-            <li><Link to="/products?category=storage" className="hover:text-cyan-400 transition-colors">PCIe 4.0 / 5.0 NVMe SSDs</Link></li>
+            <li><Link to="/products?category=gpu" className="hover:text-cyan-400 transition-colors">{lang === 'kh' ? 'កាតក្រាហ្វិក (Graphics Cards)' : 'Graphics Cards (RTX 4090 / RX 7900)'}</Link></li>
+            <li><Link to="/products?category=cpu" className="hover:text-cyan-400 transition-colors">{lang === 'kh' ? 'ប្រូសេស័រ (Processors CPU)' : 'Processors (Ryzen 7000 / Intel 14th)'}</Link></li>
+            <li><Link to="/products?category=laptop" className="hover:text-cyan-400 transition-colors">{lang === 'kh' ? 'ឡេបថបហ្គេម (Gaming Laptops)' : 'Gaming Laptops & OLED Ultrabooks'}</Link></li>
+            <li><Link to="/products?category=ram" className="hover:text-cyan-400 transition-colors">{lang === 'kh' ? 'អង្គចងចាំ (RAM DDR5 / DDR4)' : 'DDR5 & DDR4 Overclock Memory'}</Link></li>
+            <li><Link to="/products?category=storage" className="hover:text-cyan-400 transition-colors">{lang === 'kh' ? 'អង្គផ្ទុកទិន្នន័យ (NVMe SSDs)' : 'PCIe 4.0 / 5.0 NVMe SSDs'}</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-white font-semibold text-xs tracking-wider uppercase font-mono mb-4 text-indigo-400">
-            Vendor & Portals
+            {t('footer.portalsTitle')}
           </h4>
           <ul className="space-y-2 text-xs">
-            <li><Link to="/seller" className="hover:text-indigo-400 transition-colors">Vendor Shop Registration</Link></li>
-            <li><Link to="/seller" className="hover:text-indigo-400 transition-colors">Product & Stock Manager</Link></li>
-            <li><Link to="/seller" className="hover:text-indigo-400 transition-colors">Vendor Analytics Dashboard</Link></li>
-            <li><Link to="/admin" className="hover:text-rose-400 transition-colors">Super Admin Moderation Queue</Link></li>
-            <li><Link to="/profile" className="hover:text-cyan-400 transition-colors">Buyer Order Timeline & Tracking</Link></li>
+            <li><Link to="/seller" className="hover:text-indigo-400 transition-colors">{lang === 'kh' ? 'ចុះឈ្មោះបើកហាងលក់' : 'Vendor Shop Registration'}</Link></li>
+            <li><Link to="/seller" className="hover:text-indigo-400 transition-colors">{lang === 'kh' ? 'គ្រប់គ្រងទំនិញ និងស្តុក' : 'Product & Stock Manager'}</Link></li>
+            <li><Link to="/seller" className="hover:text-indigo-400 transition-colors">{lang === 'kh' ? 'ផ្ទាំងវិភាគចំណូលអ្នកលក់' : 'Vendor Analytics Dashboard'}</Link></li>
+            <li><Link to="/admin" className="hover:text-rose-400 transition-colors">{lang === 'kh' ? 'ផ្ទាំងគ្រប់គ្រង Super Admin' : 'Super Admin Moderation Queue'}</Link></li>
+            <li><Link to="/profile" className="hover:text-cyan-400 transition-colors">{lang === 'kh' ? 'តាមដានការបញ្ជាទិញ' : 'Buyer Order Timeline & Tracking'}</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-white font-semibold text-xs tracking-wider uppercase font-mono mb-4 text-purple-400">
-            Payment & Support
+            {t('footer.supportTitle')}
           </h4>
           <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-            Support Bakong KHQR, Visa/Mastercard, and Cash on Delivery with direct vendor warranty verification.
+            {t('footer.supportDesc')}
           </p>
           <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
-            <span className="text-cyan-400 font-bold">Support Hot-Line:</span>
+            <span className="text-cyan-400 font-bold">{t('footer.hotline')}</span>
             <p className="mt-1 text-slate-200">+855 (0) 23 888 999</p>
             <p className="text-slate-500 text-[11px]">support@cybertech-kh.com</p>
           </div>
@@ -111,9 +114,9 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-        <p>© 2026 CYBERTECH Multi-Vendor Platform. All rights reserved.</p>
+        <p>{t('footer.copyright')}</p>
         <p className="font-mono text-[11px] text-slate-400">
-          Powered by React + Tailwind + Express.js + MySQL/SQLite Engine
+          {t('footer.poweredBy')}
         </p>
       </div>
     </footer>

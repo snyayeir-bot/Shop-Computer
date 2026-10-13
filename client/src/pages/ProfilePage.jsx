@@ -23,10 +23,12 @@ import {
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { lang, t } = useLanguage();
   const { balance, walletDetails, setIsTopUpOpen, fetchBalance } = useWallet();
   const [orders, setOrders] = useState([]);
   const [metrics, setMetrics] = useState({ totalSpent: 0, totalOrders: 0 });
@@ -176,7 +178,7 @@ export default function ProfilePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
       {/* Top Profile Header */}
-      <div className="p-6 rounded-3xl bg-[#0b1424] border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="p-6 rounded-3xl bg-[#0b1424] border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <img
             src={user.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.name}`}
@@ -186,7 +188,13 @@ export default function ProfilePage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-black text-white font-mono">{user.name}</h1>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+              <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase ${
+                user.role === 'admin'
+                  ? 'bg-rose-950 text-rose-300 border border-rose-500/40'
+                  : user.role === 'seller'
+                  ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/40'
+                  : 'bg-cyan-950 text-cyan-400 border border-cyan-500/30'
+              }`}>
                 {user.role}
               </span>
             </div>
@@ -195,86 +203,201 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Metric Cards */}
-        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
-          {/* Seller Shop Balance Card (if user is seller) */}
-          {(user.role === 'seller' || user.role === 'admin') && (
-            <div className="flex-1 min-w-[160px] p-4 rounded-2xl bg-gradient-to-br from-amber-950/60 via-slate-900 to-amber-950/30 border-2 border-amber-500/50 text-center shadow-glow-amber">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] font-mono text-amber-300 mb-1">
-                <Store className="h-3.5 w-3.5 text-amber-400" />
-                <span className="font-bold">ចំណូលហាង (Shop Credits)</span>
+        {/* Quick Header Actions */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsTopUpOpen(true)}
+            className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 text-black hover:opacity-90 transition-all shadow-glow-cyan flex items-center gap-1.5"
+          >
+            <Coins className="h-4 w-4" />
+            <span>{lang === 'kh' ? '+ បញ្ចូល Credits' : '+ Top-Up Credits'}</span>
+          </button>
+
+          {user.role === 'seller' && (
+            <Link
+              to="/seller"
+              className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-slate-900 border border-indigo-500/40 text-indigo-300 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5"
+            >
+              <Store className="h-4 w-4 text-indigo-400" />
+              <span>{lang === 'kh' ? 'ផ្ទាំងអ្នកលក់' : 'Seller Portal'}</span>
+            </Link>
+          )}
+
+          {user.role === 'admin' && (
+            <Link
+              to="/admin"
+              className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-slate-900 border border-rose-500/40 text-rose-300 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5"
+            >
+              <ShieldCheck className="h-4 w-4 text-rose-400" />
+              <span>{lang === 'kh' ? 'ផ្ទាំងគ្រប់គ្រង' : 'Admin Panel'}</span>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* 4 Equal-Sized Metric Cards Grid (សមមាត្រស្មើគ្នា មិនធំមួយតូចមួយ) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        {/* Card 1: សមតុល្យគណនីសរុប (Usable Balance) */}
+        <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 hover:border-cyan-500/40 flex flex-col justify-between transition-all duration-200 min-h-[175px] shadow-sm">
+          <div>
+            <div className="flex items-center justify-between text-slate-400 mb-2">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-cyan-300">
+                <Coins className="h-4 w-4 text-cyan-400" />
+                <span>{lang === 'kh' ? 'សមតុល្យគណនី (Usable)' : 'Usable Balance'}</span>
+              </div>
+              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+                Wallet
+              </span>
+            </div>
+            <span className="text-2xl font-black font-mono text-cyan-400 block tracking-tight">
+              {Number(balance || 0).toFixed(2)} Credits
+            </span>
+            <span className="text-[11px] text-slate-400 font-mono block mt-1 line-clamp-1">
+              {(user.role === 'seller' || user.role === 'admin')
+                ? `(ផ្ទាល់ខ្លួន ${Number(walletDetails?.personalBalance || 0).toFixed(2)} + ពីហាង ${Number(shopWallet.availableBalance || 0).toFixed(2)})`
+                : (lang === 'kh' ? 'សមតុល្យសម្រាប់ទិញទំនិញ' : 'Available for shopping')}
+            </span>
+          </div>
+
+          <div className="pt-3 border-t border-slate-800/80 mt-3">
+            <button
+              onClick={() => setIsTopUpOpen(true)}
+              className="w-full py-1.5 px-3 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold transition-all flex items-center justify-center gap-1.5"
+            >
+              <Coins className="h-3.5 w-3.5" />
+              <span>{lang === 'kh' ? '+ បញ្ចូលលុយ (Top-Up)' : '+ Top-Up Credits'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: ចំណូលហាង (Shop Credits) */}
+        {(user.role === 'seller' || user.role === 'admin') ? (
+          <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 hover:border-amber-500/40 flex flex-col justify-between transition-all duration-200 min-h-[175px] shadow-sm">
+            <div>
+              <div className="flex items-center justify-between text-slate-400 mb-2">
+                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-amber-300">
+                  <Store className="h-4 w-4 text-amber-400" />
+                  <span>{lang === 'kh' ? 'ចំណូលហាង (Shop)' : 'Shop Credits'}</span>
+                </div>
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-500/30">
+                  Store
+                </span>
               </div>
               <span className="text-2xl font-black font-mono text-amber-400 block tracking-tight">
                 {Number(shopWallet.availableBalance || 0).toFixed(2)} Credits
               </span>
-              <span className="text-[10px] text-emerald-400 font-mono block mt-0.5 font-semibold">
-                ✓ រាប់ចូលគណនី (អាចដក ឬទិញបាន)
+              <span className="text-[11px] text-emerald-400 font-mono block mt-1 font-semibold line-clamp-1">
+                {lang === 'kh' ? '✓ រាប់ចូលគណនី (អាចដកបាន)' : '✓ Counted in account'}
               </span>
-              {Number(shopWallet.pendingBalance || 0) > 0 && (
-                <span className="text-[10px] text-indigo-300 font-mono block mt-0.5">
-                  ({Number(shopWallet.pendingBalance).toFixed(2)} Pending)
-                </span>
-              )}
-              <div className="flex items-center justify-center gap-1.5 mt-2">
-                <button
-                  onClick={() => setIsWithdrawModalOpen(true)}
-                  disabled={shopWallet.availableBalance <= 0}
-                  className="text-[10px] font-mono font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-black px-3 py-1 rounded-lg hover:from-amber-300 hover:to-amber-400 transition-all flex items-center gap-1 shadow-sm disabled:opacity-40"
-                >
-                  <ArrowUpRight className="h-3 w-3" />
-                  <span>ដកប្រាក់</span>
-                </button>
-                <Link
-                  to="/seller"
-                  className="text-[10px] font-mono text-slate-300 hover:text-white bg-slate-800 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
-                >
-                  <span>ហាង</span>
-                </Link>
-              </div>
             </div>
-          )}
 
-          {/* Personal Buyer / Usable Account Wallet Balance Card */}
-          <div className="flex-1 min-w-[140px] p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 text-center">
-            <span className="text-[11px] font-mono text-slate-400 block mb-1">
-              {user.role === 'seller' || user.role === 'admin' ? 'សមតុល្យគណនីសរុប (Usable)' : 'សមតុល្យផ្ទាល់ខ្លួន (Buyer)'}
-            </span>
-            <span className="text-xl font-black font-mono text-cyan-400 block">
-              {Number(balance || 0).toFixed(2)} Credits
-            </span>
-            {(user.role === 'seller' || user.role === 'admin') && (
-              <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
-                (ផ្ទាល់ខ្លួន {Number(walletDetails?.personalBalance || 0).toFixed(2)} + ពីហាង {Number(shopWallet.availableBalance || 0).toFixed(2)})
+            <div className="pt-3 border-t border-slate-800/80 mt-3 flex items-center gap-2">
+              <button
+                onClick={() => setIsWithdrawModalOpen(true)}
+                disabled={shopWallet.availableBalance <= 0}
+                className="flex-1 py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 text-black text-xs font-mono font-bold transition-all flex items-center justify-center gap-1 shadow-sm disabled:opacity-40"
+              >
+                <ArrowUpRight className="h-3.5 w-3.5" />
+                <span>{lang === 'kh' ? 'ដកប្រាក់' : 'Withdraw'}</span>
+              </button>
+              <Link
+                to="/seller"
+                className="flex-1 py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono font-bold transition-all flex items-center justify-center gap-1 border border-slate-700"
+              >
+                <Store className="h-3.5 w-3.5 text-indigo-400" />
+                <span>{lang === 'kh' ? 'ហាង' : 'Shop'}</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 hover:border-indigo-500/40 flex flex-col justify-between transition-all duration-200 min-h-[175px] shadow-sm">
+            <div>
+              <div className="flex items-center justify-between text-slate-400 mb-2">
+                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-indigo-300">
+                  <Store className="h-4 w-4 text-indigo-400" />
+                  <span>{lang === 'kh' ? 'គណនីអ្នកលក់' : 'Vendor Portal'}</span>
+                </div>
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                  Portal
+                </span>
+              </div>
+              <span className="text-2xl font-black font-mono text-slate-300 block tracking-tight">
+                0.00 Credits
               </span>
-            )}
-            <button
-              onClick={() => setIsTopUpOpen(true)}
-              className="mt-2 text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2.5 py-1 rounded-lg hover:bg-cyan-500/30 transition-colors shadow-sm"
-            >
-              + Top-Up
-            </button>
+              <span className="text-[11px] text-slate-400 font-mono block mt-1 line-clamp-1">
+                {lang === 'kh' ? 'បើកហាងដើម្បីទទួលចំណូល' : 'Open shop to sell'}
+              </span>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800/80 mt-3">
+              <Link
+                to="/seller"
+                className="w-full py-1.5 px-3 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-mono font-bold transition-all flex items-center justify-center gap-1.5"
+              >
+                <Store className="h-3.5 w-3.5" />
+                <span>{lang === 'kh' ? 'បើកហាងលក់ (Open Store)' : 'Become a Seller'}</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Card 3: Total Spent */}
+        <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 hover:border-emerald-500/40 flex flex-col justify-between transition-all duration-200 min-h-[175px] shadow-sm">
+          <div>
+            <div className="flex items-center justify-between text-slate-400 mb-2">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-300">
+                <DollarSign className="h-4 w-4 text-emerald-400" />
+                <span>{lang === 'kh' ? 'ការចំណាយសរុប' : 'Total Spent'}</span>
+              </div>
+              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30">
+                Outflow
+              </span>
+            </div>
+            <span className="text-2xl font-black font-mono text-emerald-400 block tracking-tight">
+              {Number(metrics.totalSpent || 0).toFixed(2)} Credits
+            </span>
+            <span className="text-[11px] text-slate-400 font-mono block mt-1 line-clamp-1">
+              {lang === 'kh' ? 'ទំហំទឹកប្រាក់ទិញទំនិញសរុប' : 'Total payments completed'}
+            </span>
           </div>
 
-          <div className="flex-1 min-w-[120px] p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
-            <span className="text-[11px] font-mono text-slate-400 block mb-1">Total Spent</span>
-            <span className="text-xl font-black font-mono text-white block">
-              {Number(metrics.totalSpent).toFixed(2)} Credits
-            </span>
-            <span className="text-[10px] font-mono text-slate-500 mt-2 block">
-              Total Outflow
-            </span>
-          </div>
-
-          <div className="flex-1 min-w-[120px] p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
-            <span className="text-[11px] font-mono text-slate-400 block mb-1">Orders Placed</span>
-            <span className="text-xl font-black font-mono text-indigo-400 block">
-              {orders.length} Orders
-            </span>
-            <span className="text-[10px] font-mono text-slate-500 mt-2 block">
-              Transactions
-            </span>
+          <div className="pt-3 border-t border-slate-800/80 mt-3">
+            <div className="w-full py-1.5 px-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 text-xs font-mono flex items-center justify-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              <span>{lang === 'kh' ? 'ទូទាត់ជោគជ័យ' : 'Verified Orders'}</span>
+            </div>
           </div>
         </div>
+
+        {/* Card 4: Orders Placed */}
+        <div className="p-5 rounded-2xl bg-[#0b1120] border border-slate-800 hover:border-indigo-500/40 flex flex-col justify-between transition-all duration-200 min-h-[175px] shadow-sm">
+          <div>
+            <div className="flex items-center justify-between text-slate-400 mb-2">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-300">
+                <ShoppingBag className="h-4 w-4 text-indigo-400" />
+                <span>{lang === 'kh' ? 'ការបញ្ជាទិញសរុប' : 'Orders Placed'}</span>
+              </div>
+              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-400 border border-indigo-500/30">
+                History
+              </span>
+            </div>
+            <span className="text-2xl font-black font-mono text-indigo-400 block tracking-tight">
+              {orders.length} {lang === 'kh' ? 'ការកុម្ម៉ង់' : 'Orders'}
+            </span>
+            <span className="text-[11px] text-slate-400 font-mono block mt-1 line-clamp-1">
+              {lang === 'kh' ? 'ប្រវត្តិវិក្កយបត្រក្នុងគណនី' : 'Order transactions history'}
+            </span>
+          </div>
+
+          <div className="pt-3 border-t border-slate-800/80 mt-3">
+            <div className="w-full py-1.5 px-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 text-xs font-mono flex items-center justify-center gap-1.5">
+              <Package className="h-3.5 w-3.5 text-indigo-400" />
+              <span>{orders.length} {lang === 'kh' ? 'ប្រតិបត្តិការ' : 'Transactions'}</span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* Seller Withdrawal Requests History (Only shown for sellers) */}

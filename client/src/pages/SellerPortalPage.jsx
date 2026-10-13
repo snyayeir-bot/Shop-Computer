@@ -33,13 +33,16 @@ import {
   ArrowUpRight,
   QrCode,
   Upload,
-  FileCheck2
+  FileCheck2,
+  BarChart3
 } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function SellerPortalPage() {
   const { user, switchDemoUser } = useAuth();
+  const { lang, t } = useLanguage();
   
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'orders' | 'inventory' | 'wallet' | 'settings'
   const [dashboardData, setDashboardData] = useState(null);
@@ -380,7 +383,7 @@ export default function SellerPortalPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* Top Banner with Store Details */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-950 border border-indigo-500/30 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-950 border border-indigo-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
         <div className="flex items-center gap-4">
           <img
             src={shopForm.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150'}
@@ -388,80 +391,147 @@ export default function SellerPortalPage() {
             className="h-16 w-16 rounded-2xl object-cover border-2 border-indigo-500/40 shadow-glow-indigo"
           />
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-white font-mono">
-                {shopForm.shop_name || 'My Hardware Store'}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl font-black text-white font-mono tracking-tight">
+                {shopForm.shop_name || (lang === 'kh' ? 'ហាងកុំព្យូទ័ររបស់ខ្ញុំ' : 'My Hardware Store')}
               </h1>
               {dashboardData?.shop?.is_approved ? (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 shadow-sm">
                   <CheckCircle2 className="h-3 w-3" />
-                  Verified Vendor
+                  {lang === 'kh' ? 'ហាងបានអនុម័តផ្លូវការ' : 'Verified Vendor'}
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-950 text-amber-300 border border-amber-500/30">
-                  Pending Admin Approval
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-950 text-amber-300 border border-amber-500/40 flex items-center gap-1 animate-pulse">
+                  <Clock className="h-3 w-3" />
+                  {lang === 'kh' ? 'រង់ចាំ Admin អនុម័ត' : 'Pending Admin Approval'}
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Owner: {user.name} ({user.email})
-            </p>
+            <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1 flex-wrap">
+              <span>{lang === 'kh' ? 'ម្ចាស់ហាង:' : 'Owner:'} <strong className="text-slate-200">{user.name}</strong></span>
+              <span className="text-slate-600">•</span>
+              <span>{user.email}</span>
+              {shopForm.phone && (
+                <>
+                  <span className="text-slate-600">•</span>
+                  <span>{shopForm.phone}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center flex-wrap gap-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
+        {/* Quick Balance Summary & Payout Shortcut */}
+        <div className="flex items-center gap-3 bg-slate-900/90 border border-indigo-500/30 rounded-2xl p-3 px-4 shadow-sm w-full md:w-auto justify-between md:justify-start">
+          <div>
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+              {lang === 'kh' ? 'សមតុល្យហាងអាចដកបាន' : 'Available Shop Balance'}
+            </span>
+            <span className="text-lg font-black font-mono text-amber-400">
+              {Number(shopWallet.availableBalance || 0).toFixed(2)} Credits
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setActiveTab('wallet');
+              setIsWithdrawModalOpen(true);
+            }}
+            disabled={shopWallet.availableBalance <= 0}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-black text-xs font-mono font-bold flex items-center gap-1 hover:from-amber-300 hover:to-amber-400 transition-all shadow-sm disabled:opacity-40"
+          >
+            <ArrowUpRight className="h-3.5 w-3.5" />
+            <span>{lang === 'kh' ? 'ដកប្រាក់' : 'Withdraw'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Dedicated Seller Navigation Bar (ច្បាស់លាស់ មើលងាយយល់ មិនរញ៉េរញ៉ៃ) */}
+      <div className="bg-[#0b1120] p-1.5 rounded-2xl border border-slate-800 shadow-md">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
+          {/* Tab 1: Analytics & Overview */}
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2 ${
               activeTab === 'dashboard'
-                ? 'bg-indigo-600 text-white shadow-glow-indigo'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-glow-indigo'
+                : 'text-slate-400 hover:text-white hover:bg-slate-850'
             }`}
           >
-            Analytics & Overview
+            <BarChart3 className="h-4 w-4 text-cyan-400" />
+            <span>{lang === 'kh' ? 'ទិន្នន័យ & ចំណូល' : 'Analytics & Overview'}</span>
           </button>
+
+          {/* Tab 2: Customer Orders */}
           <button
             onClick={() => setActiveTab('orders')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2 ${
               activeTab === 'orders'
-                ? 'bg-indigo-600 text-white shadow-glow-indigo'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-glow-indigo'
+                : 'text-slate-400 hover:text-white hover:bg-slate-850'
             }`}
           >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            <span>Customer Orders ({orders.length})</span>
+            <ShoppingBag className="h-4 w-4 text-indigo-400" />
+            <span>{lang === 'kh' ? 'ការកុម្ម៉ង់ទិញ' : 'Customer Orders'}</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+              activeTab === 'orders'
+                ? 'bg-white text-indigo-900'
+                : 'bg-indigo-950 text-indigo-300 border border-indigo-500/30'
+            }`}>
+              {orders.length}
+            </span>
           </button>
+
+          {/* Tab 3: Inventory */}
           <button
             onClick={() => setActiveTab('inventory')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2 ${
               activeTab === 'inventory'
-                ? 'bg-indigo-600 text-white shadow-glow-indigo'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-glow-indigo'
+                : 'text-slate-400 hover:text-white hover:bg-slate-850'
             }`}
           >
-            Inventory ({products.length})
+            <Package className="h-4 w-4 text-emerald-400" />
+            <span>{lang === 'kh' ? 'ស្តុកទំនិញ' : 'Inventory'}</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+              activeTab === 'inventory'
+                ? 'bg-white text-emerald-900'
+                : 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'
+            }`}>
+              {products.length}
+            </span>
           </button>
+
+          {/* Tab 4: Shop Wallet */}
           <button
             onClick={() => setActiveTab('wallet')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2 ${
               activeTab === 'wallet'
-                ? 'bg-indigo-600 text-white shadow-glow-indigo'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-glow-amber'
+                : 'text-slate-400 hover:text-white hover:bg-slate-850'
             }`}
           >
-            <Coins className="h-3.5 w-3.5 text-amber-400" />
-            <span>Shop Wallet ({shopWallet.availableBalance.toFixed(2)} Credits)</span>
+            <Coins className="h-4 w-4 text-amber-400" />
+            <span>{lang === 'kh' ? 'កាបូបលុយហាង' : 'Shop Wallet'}</span>
+            <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black font-mono ${
+              activeTab === 'wallet'
+                ? 'bg-black text-amber-300'
+                : 'bg-amber-950/80 text-amber-400 border border-amber-500/30'
+            }`}>
+              {shopWallet.availableBalance.toFixed(2)}
+            </span>
           </button>
+
+          {/* Tab 5: Shop Profile */}
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2 col-span-2 sm:col-span-1 ${
               activeTab === 'settings'
-                ? 'bg-indigo-600 text-white shadow-glow-indigo'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-glow-indigo'
+                : 'text-slate-400 hover:text-white hover:bg-slate-850'
             }`}
           >
-            Shop Profile
+            <Store className="h-4 w-4 text-purple-400" />
+            <span>{lang === 'kh' ? 'ព័ត៌មានហាង' : 'Shop Profile'}</span>
           </button>
         </div>
       </div>

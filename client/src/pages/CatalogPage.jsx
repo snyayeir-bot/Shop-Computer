@@ -15,8 +15,10 @@ import {
 import api from '../api/axios';
 import ProductCard from '../components/ProductCard';
 import ProductDetailModal from '../components/ProductDetailModal';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function CatalogPage() {
+  const { lang, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -102,13 +104,13 @@ export default function CatalogPage() {
           <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 mb-1">
             <span>Hardware Marketplace</span>
             <ChevronRight className="h-3 w-3" />
-            <span className="text-slate-300 capitalize">{currentCategory || 'All Products'}</span>
+            <span className="text-slate-300 capitalize">{currentCategory || t('catalog.allCategories')}</span>
           </div>
           <h1 className="text-3xl font-black text-white font-mono tracking-tight">
-            PC Components & Systems Catalog
+            {t('catalog.title')}
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Verified stock with multi-spec hardware parameters & manufacturer warranty
+            {t('catalog.subtitle')}
           </p>
         </div>
 
@@ -119,20 +121,20 @@ export default function CatalogPage() {
             className="lg:hidden px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-cyan-300 flex items-center gap-2"
           >
             <Filter className="h-4 w-4" />
-            <span>Filters</span>
+            <span>{t('catalog.filters')}</span>
           </button>
 
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5">
-            <span className="text-xs text-slate-400 font-mono hidden sm:inline">Sort by:</span>
+            <span className="text-xs text-slate-400 font-mono hidden sm:inline">{lang === 'kh' ? 'តម្រៀប:' : 'Sort by:'}</span>
             <select
               value={currentSort}
               onChange={(e) => updateFilter('sort', e.target.value)}
               className="bg-transparent text-xs font-mono text-cyan-400 focus:outline-none cursor-pointer"
             >
-              <option value="newest" className="bg-slate-900 text-slate-200">Featured & Newest</option>
-              <option value="price-low" className="bg-slate-900 text-slate-200">Price: Low to High</option>
-              <option value="price-high" className="bg-slate-900 text-slate-200">Price: High to Low</option>
-              <option value="stock" className="bg-slate-900 text-slate-200">Stock Quantity</option>
+              <option value="newest" className="bg-slate-900 text-slate-200">{lang === 'kh' ? 'ថ្មីៗ & ពេញនិយម' : 'Featured & Newest'}</option>
+              <option value="price-low" className="bg-slate-900 text-slate-200">{lang === 'kh' ? 'តម្លៃ៖ ទាបទៅខ្ពស់' : 'Price: Low to High'}</option>
+              <option value="price-high" className="bg-slate-900 text-slate-200">{lang === 'kh' ? 'តម្លៃ៖ ខ្ពស់ទៅទាប' : 'Price: High to Low'}</option>
+              <option value="stock" className="bg-slate-900 text-slate-200">{lang === 'kh' ? 'ចំនួនស្តុក' : 'Stock Quantity'}</option>
             </select>
           </div>
         </div>
@@ -149,14 +151,14 @@ export default function CatalogPage() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold flex items-center gap-2">
                 <SlidersHorizontal className="h-4 w-4" />
-                Hardware Filters
+                {t('catalog.filters')}
               </h3>
               <button
                 onClick={resetAllFilters}
                 className="text-[11px] font-mono text-slate-400 hover:text-rose-400 flex items-center gap-1 transition-colors"
               >
                 <RotateCcw className="h-3 w-3" />
-                Reset
+                {lang === 'kh' ? 'កំណត់ឡើងវិញ' : 'Reset'}
               </button>
             </div>
 
